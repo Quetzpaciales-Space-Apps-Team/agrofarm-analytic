@@ -5,6 +5,7 @@ description = "AgroFarm ml-service."
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115",
+    "pyyaml>=6.0.3",
     "uvicorn>=0.32",
 ]
 
@@ -16,6 +17,11 @@ dev = [
     "mypy>=1.13",
     "pip-audit>=2.7",
     "httpx>=0.28",
+    "schemathesis>=4.33.4",
+    "jsonschema>=4.26.0",
+    "openapi-spec-validator>=0.9.0",
+    "types-pyyaml>=6.0.12.20261113",
+    "types-jsonschema>=4.26.0.20261006",
 ]
 
 [build-system]
@@ -24,6 +30,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agrofarm_ml"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"docs/contract/openapi.yaml" = "agrofarm_ml/openapi.yaml"
 
 [tool.ruff]
 line-length = 100
