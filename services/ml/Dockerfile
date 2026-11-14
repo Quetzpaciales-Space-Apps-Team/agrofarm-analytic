@@ -5,6 +5,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY src ./src
+COPY docs ./docs
 RUN uv sync --frozen --no-dev --no-editable
 
 FROM python:3.14-slim-trixie AS runtime
