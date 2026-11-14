@@ -23,7 +23,7 @@ ONI = FIXTURES / "oni_sample.txt"
 RONI = FIXTURES / "roni_sample.txt"
 
 
-def month(frame: pd.DataFrame, iso: str) -> pd.Series:  # type: ignore[type-arg]
+def month(frame: pd.DataFrame, iso: str) -> pd.Series:
     return frame.loc[frame["month"] == pd.Timestamp(iso)].iloc[0]
 
 
@@ -91,7 +91,7 @@ def test_noaa_missing_marker_becomes_null(tmp_path: Path) -> None:
     frame = read_enso(oni, roni)
 
     assert bool(frame["roni"].isna().iloc[0])
-    assert frame["phase"].iloc[0] is None
+    assert bool(frame["phase"].isna().iloc[0])
     assert frame["phase_oni"].iloc[0] == "la_nina"
 
 
