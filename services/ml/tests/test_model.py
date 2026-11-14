@@ -112,7 +112,9 @@ def test_rainfall_change_scales_the_scenario_and_is_reported_as_an_assumption(
     plain = simulate(model, month_of_year=7, enso_phase="neutral")
     drier = simulate(model, month_of_year=7, enso_phase="neutral", rainfall_change_pct=-20)
 
-    assert drier["scenario"]["p50"] == pytest.approx(plain["scenario"]["p50"] * 0.8)
+    assert drier["scenario"]["p50"] == pytest.approx(
+        plain["scenario"]["p50"] * 0.8, abs=0.06
+    )  # values are rounded to 0.1 mm
     assert any("rainfall_change_pct" in note for note in drier["assumptions"])
 
 
@@ -157,6 +159,8 @@ def test_training_cli_writes_the_model_and_a_model_card(
     assert card["metrics"]["model"]["pinball_mean"] > 0
     assert len(card["data_versions"]["climate_sha256"]) == 64
     assert card["limits"]
+    assert card["verdict"] in {"beats_climatology", "no_skill_over_climatology"}
+    assert (card["verdict"] == "beats_climatology") == (card["metrics"]["skill_vs_climatology"] > 0)
     assert RainfallModel.load(out).predict(
         build_training_table(climate, enso)[FEATURES].head(3)
     ).shape == (3, 3)
