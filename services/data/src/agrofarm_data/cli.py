@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from agrofarm_data import __version__
-from agrofarm_data.connectors import enso, insivumeh
+from agrofarm_data.connectors import enso, insivumeh, nasa_power
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,6 +24,10 @@ def build_parser() -> argparse.ArgumentParser:
     indices.add_argument("--oni", type=Path, required=True, help="Path to oni.ascii.txt")
     indices.add_argument("--roni", type=Path, required=True, help="Path to RONI.ascii.txt")
     indices.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
+
+    power = commands.add_parser("nasa-power", help="Clean a NASA POWER daily point CSV")
+    power.add_argument("--input", type=Path, required=True, help="Path to the POWER daily .csv")
+    power.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
     return parser
 
 
@@ -36,5 +40,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     elif args.command == "enso":
         frame = enso.read_enso(args.oni, args.roni)
         manifest = enso.write_clean(frame, args.out, oni_file=args.oni, roni_file=args.roni)
+        sys.stdout.write(f"{len(frame)} rows -> {manifest}\n")
+    elif args.command == "nasa-power":
+        frame = nasa_power.read_power(args.input)
+        manifest = nasa_power.write_clean(frame, args.out, source_file=args.input)
         sys.stdout.write(f"{len(frame)} rows -> {manifest}\n")
     return 0
