@@ -39,12 +39,83 @@ jobs:
             *) echo "::error::Branch '$HEAD' does not follow the naming rule (feat/, fix/, chore/, docs/, test/, refactor/, ci/, hotfix/)."; exit 1 ;;
           esac
 
+  # Which services does this change touch? (AGENTS.md section 6, rule 4)
+  # A change outside services/ml and services/data is a root change and runs both.
+  # Pushes to develop and main always run both.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      ml: ${{ steps.filter.outputs.ml }}
+      data: ${{ steps.filter.outputs.data }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          ml=true; data=true
+          if [ "$EVENT" = "pull_request" ]; then
+            files=$(git diff --name-only "origin/$BASE...HEAD")
+            echo "$files"
+            if ! echo "$files" | grep -qvE '^services/(ml|data)/'; then
+              echo "$files" | grep -q '^services/ml/' || ml=false
+              echo "$files" | grep -q '^services/data/' || data=false
+            fi
+          fi
+          echo "ml=$ml" >> "$GITHUB_OUTPUT"
+          echo "data=$data" >> "$GITHUB_OUTPUT"
+
+  ml:
+    needs: changes
+    if: needs.changes.outputs.ml == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ml
+    steps:
+      - uses: actions/checkout@v7
+      - run: pipx install uv==0.13.5
+      - run: uv sync --frozen
+      - run: make lint
+      - run: make typecheck
+      - run: make test
+      - run: make audit
+      - run: docker build -t ml-service:ci .
+      - name: Trivy image scan
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.2
+          image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 ml-service:ci
+
+  data:
+    needs: changes
+    if: needs.changes.outputs.data == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/data
+    steps:
+      - uses: actions/checkout@v7
+      - run: pipx install uv==0.13.5
+      - run: uv sync --frozen
+      - run: make lint
+      - run: make typecheck
+      - run: make test
+      - run: make audit
+      - run: docker build -t data-service:ci .
+      - name: Trivy image scan
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.2
+          image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 data-service:ci
+
   # The single required status check (rule G3). Keep the job name stable.
   # Add every new job to `needs`. A skipped job counts as passed, so path
   # filters (rule G3.1) never block or bypass this gate.
   ci-gate:
     if: always()
-    needs: [policy]
+    needs: [policy, changes, ml, data]
     runs-on: ubuntu-latest
     steps:
       - name: Check results of all jobs

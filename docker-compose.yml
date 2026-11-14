@@ -1,0 +1,14 @@
+# Local development. core-api is not part of this repo: point CORE_API_URL at a stub
+# or at the core-api compose when a task needs it.
+services:
+  ml:
+    build: services/ml
+    ports:
+      - "127.0.0.1:${ML_PORT:-8081}:8080"
+
+  data:
+    build: services/data
+    # Jobs run on demand: docker compose run --rm data <command>
+    profiles: ["jobs"]
+    volumes:
+      - ./data:/data

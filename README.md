@@ -4,6 +4,20 @@ Two internal services: `ml-service` (crop simulation, uncertainty, rotation scor
 
 Part of AgroFarm, a crop growth and rotation simulator for farmers. The tool supports decisions. It never replaces farmers or local agronomists.
 
+## Run it
+
+Needs Docker and [uv](https://docs.astral.sh/uv/) (dependency manager for both services, one `uv.lock` per service).
+
+```
+make check        # lint, typecheck and tests of both services
+make check-ml     # only services/ml
+make check-data   # only services/data
+make dev          # ml-service on http://localhost:8081
+docker compose run --rm data --help   # data-service jobs
+```
+
+Layout: `services/ml` is `ml-service` (package `agrofarm_ml`), `services/data` is `data-service` (package `agrofarm_data`). They never import each other. A test in each service enforces it. A pull request touches one service.
+
 ## Start here
 
 - **Rules for people and agents:** [`AGENTS.md`](AGENTS.md). Read it before changing anything.
