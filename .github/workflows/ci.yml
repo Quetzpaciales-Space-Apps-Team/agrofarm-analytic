@@ -84,6 +84,8 @@ jobs:
       - run: make test
       - run: make audit
       - run: docker build -t ml-service:ci .
+      - name: The image can load the model code
+        run: docker run --rm ml-service:ci python -c "import agrofarm_ml.model, agrofarm_ml.scenario"
       - name: Trivy image scan
         run: >-
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.2
@@ -105,6 +107,8 @@ jobs:
       - run: make test
       - run: make audit
       - run: docker build -t data-service:ci .
+      - name: The image can run the CLI
+        run: docker run --rm data-service:ci --version
       - name: Trivy image scan
         run: >-
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.2

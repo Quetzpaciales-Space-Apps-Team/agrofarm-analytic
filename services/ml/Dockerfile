@@ -11,7 +11,9 @@ RUN uv sync --frozen --no-dev --no-editable
 FROM python:3.14-slim-trixie AS runtime
 # Apply pending Debian security updates, and drop pip: the runtime never installs
 # anything and pip vendors packages that image scanners flag.
+# libgomp1 is the OpenMP runtime that LightGBM loads.
 RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends libgomp1 \
     && rm -rf /var/lib/apt/lists/* \
     && python -m pip uninstall -y pip \
     && useradd --system --uid 10001 --no-create-home app

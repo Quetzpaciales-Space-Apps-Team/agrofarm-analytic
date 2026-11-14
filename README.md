@@ -18,6 +18,21 @@ docker compose run --rm data --help   # data-service jobs
 
 Layout: `services/ml` is `ml-service` (package `agrofarm_ml`), `services/data` is `data-service` (package `agrofarm_data`). They never import each other. A test in each service enforces it. A pull request touches one service.
 
+## Rainfall baseline model
+
+```
+# 1. clean tables (data-service)
+cd services/data
+uv run python -m agrofarm_data insivumeh --input <INSIVUMEH.xlsx> --out ../../data/clean
+uv run python -m agrofarm_data enso --oni <oni.ascii.txt> --roni <RONI.ascii.txt> --out ../../data/clean
+# 2. train (ml-service)
+cd ../ml
+uv run python -m agrofarm_ml.training --climate ../../data/clean/climate_insivumeh_daily.parquet \
+    --enso ../../data/clean/enso_monthly.parquet --out ../../data/models/rainfall/0.1.0
+```
+
+The model predicts the monthly rainfall total at the station with a p10 to p90 range, from the month of the year and the ENSO index (RONI) of the last six months. It is validated on whole held-out years, including El Nino and La Nina years, against the calendar-month climatology. The result is written to `model_card.json` with a `verdict` field. Read it before showing any number: on the first run with real data the model did **not** beat climatology.
+
 ## Start here
 
 - **Rules for people and agents:** [`AGENTS.md`](AGENTS.md). Read it before changing anything.
