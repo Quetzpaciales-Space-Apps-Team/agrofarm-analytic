@@ -31,7 +31,7 @@ def row(day: str, temp: float = 20.0, rain: float = 0.0, sun: float = 6.0,
 def make_workbook(path: Path, sheets: dict[str, list[Row]], header: list[str] = HEADER) -> Path:
     """Same layout as the real file: three metadata rows, a blank row, header on row 5."""
     book = openpyxl.Workbook()
-    book.remove(book.active)  # type: ignore[arg-type]
+    del book[book.sheetnames[0]]
     for title, rows in sheets.items():
         sheet = book.create_sheet(title)
         sheet.append(["Estación:", "INSIVUMEH", "Periodo:", title])
@@ -45,6 +45,10 @@ def make_workbook(path: Path, sheets: dict[str, list[Row]], header: list[str] = 
     units.append(["Variables"])
     book.save(path)
     return path
+
+
+def is_null(frame: pd.DataFrame, index: int, column: str) -> bool:
+    return bool(frame[column].isna().iloc[index])
 
 
 @pytest.fixture
@@ -87,17 +91,17 @@ def test_sentinel_becomes_null_in_every_variable(workbook: Path) -> None:
     values = frame[COLUMNS[2:]]
 
     assert not (values == -99.9).to_numpy().any()
-    assert pd.isna(frame.loc[0, "cloud_cover_oktas"])
-    assert pd.isna(frame.loc[0, "wind_speed_kmh"])
-    assert pd.isna(frame.loc[2, "sunshine_hours"])
-    assert pd.isna(frame.loc[3, "rainfall_mm"])
-    assert frame.loc[0, "relative_humidity_pct"] == 76
+    assert is_null(frame, 0, "cloud_cover_oktas")
+    assert is_null(frame, 0, "wind_speed_kmh")
+    assert is_null(frame, 2, "sunshine_hours")
+    assert is_null(frame, 3, "rainfall_mm")
+    assert frame["relative_humidity_pct"].iloc[0] == 76
 
 
 def test_missing_rainfall_is_null_and_never_zero(workbook: Path) -> None:
     frame = read_insivumeh(workbook)
 
-    assert pd.isna(frame.loc[3, "rainfall_mm"])
+    assert is_null(frame, 3, "rainfall_mm")
     assert frame["rainfall_mm"].sum(min_count=1) == 12.5
 
 

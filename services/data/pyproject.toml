@@ -17,6 +17,7 @@ dev = [
     "mypy>=1.13",
     "pip-audit>=2.7",
     "pandas-stubs>=2.2",
+    "types-openpyxl>=3.1.5.20261017",
 ]
 
 [build-system]
