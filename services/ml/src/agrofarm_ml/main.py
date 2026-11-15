@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 from agrofarm_ml import stub
 from agrofarm_ml.contract import load_contract
+from agrofarm_ml.rotations import engine
 from agrofarm_ml.schemas import RotationScoreRequest, SimulateRequest
 
 
@@ -24,7 +25,7 @@ def create_app() -> FastAPI:
 
     @app.get("/v1/models")
     def list_models() -> dict[str, Any]:
-        return {"items": stub.MODELS}
+        return {"items": [*stub.MODELS, engine.model_card()]}
 
     @app.post("/v1/simulate")
     def simulate(request: SimulateRequest) -> dict[str, Any]:
@@ -32,6 +33,16 @@ def create_app() -> FastAPI:
 
     @app.post("/v1/rotations/score")
     def score_rotations(request: RotationScoreRequest) -> dict[str, Any]:
-        return stub.score_rotations(request)
+        strategies = engine.score(
+            request.current_rotation,
+            request.priorities.weights,
+            request.priorities.constraints,
+            request.scenario.model_dump(),
+        )
+        return {
+            "disclaimer": stub.DISCLAIMER,
+            "strategies": strategies,
+            "provenance": {**engine.provenance(), "generated_at": stub.now_iso()},
+        }
 
     return app
