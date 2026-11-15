@@ -87,10 +87,16 @@ def _evidence(crops: Sequence[Crop], table: TraitsTable) -> list[dict[str, str]]
 
 def _gaps(table: TraitsTable, constraints: Mapping[str, Any]) -> list[str]:
     gaps = [
-        f"Crop traits table {table.version} is {table.manifest['status']} and was not reviewed: "
-        f"{LOCAL_REVIEW}.",
+        f"Crop traits table {table.version} retains {table.manifest['status']} source status: "
+        f"{LOCAL_REVIEW} before applying it to this farm.",
         "No yield records, soil data or planting dates of this farm enter the scores.",
     ]
+    if table.manifest.get("human_review_confirmation", {}).get("review_occurred") is True:
+        gaps.append(
+            "The project owner confirmed an agronomy review of the crop traits. "
+            "The reviewer identity, reviewed revision and corrections are not recorded; "
+            "source verification and rule-threshold review are not established."
+        )
     ignored = rules.unsupported_constraints(constraints)
     if ignored:
         gaps.append(f"These constraints are not understood and were ignored: {', '.join(ignored)}.")

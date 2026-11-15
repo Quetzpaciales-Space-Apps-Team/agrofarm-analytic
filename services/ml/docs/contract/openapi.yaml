@@ -161,8 +161,9 @@ paths:
       operationId: scoreRotations
       summary: Score and explain at least three rotation strategies, including the current one
       description: >
-        Rule engine over a versioned crop traits table that is provisional and not reviewed by an
-        agronomist. It is not a trained model. Every strategy needs local review. The scenario
+        Rule engine over a versioned crop traits table with provisional source status. The owner
+        confirmed an agronomy review; reviewer identity and exact revision are not recorded.
+        It is not a trained model. Every strategy needs local review. The scenario
         moves scores through named rules; each moved score is explained in `why`.
       requestBody:
         required: true
