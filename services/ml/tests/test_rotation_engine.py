@@ -138,6 +138,38 @@ def test_water_limited_constraint_changes_overall_scores() -> None:
     assert "water_limited" in " ".join(limited["current"]["why"])
 
 
+CORE_API_LOW_WATER = {"water_availability": "low", "equipment": []}
+
+
+def test_low_water_availability_from_core_api_changes_scores_and_says_why() -> None:
+    plain = by_id(run(["maize", "fallow"], weights={"water_use": 0.5}))
+    low = by_id(
+        run(["maize", "fallow"], weights={"water_use": 0.5}, constraints=CORE_API_LOW_WATER)
+    )
+    assert plain["current"]["overall_score"] != low["current"]["overall_score"]
+    assert "water_availability" in " ".join(low["current"]["why"])
+
+
+def test_the_default_core_api_constraints_are_not_reported_as_ignored() -> None:
+    defaults = {"water_availability": "medium", "equipment": []}
+    for strategy in run(["maize", "fallow"], constraints=defaults):
+        assert not any("not understood" in gap for gap in strategy["gaps"])
+
+
+def test_equipment_is_recorded_but_the_gaps_say_no_rule_uses_it() -> None:
+    constraints = {"water_availability": "medium", "equipment": ["tractor", "irrigation"]}
+    for strategy in run(["maize", "fallow"], constraints=constraints):
+        assert any(
+            "equipment" in gap.lower() and "no rule" in gap.lower() for gap in strategy["gaps"]
+        )
+        assert not any("not understood" in gap for gap in strategy["gaps"])
+
+
+def test_no_equipment_means_no_gap_about_recorded_equipment() -> None:
+    for strategy in run(["maize", "fallow"], constraints=CORE_API_LOW_WATER):
+        assert not any("is recorded for this farm" in gap for gap in strategy["gaps"])
+
+
 def test_avoid_crops_penalises_but_never_drops_a_strategy() -> None:
     plain = by_id(run(["maize", "fallow"]))
     avoid = by_id(run(["maize", "fallow"], constraints={"avoid_crops": ["black_beans"]}))

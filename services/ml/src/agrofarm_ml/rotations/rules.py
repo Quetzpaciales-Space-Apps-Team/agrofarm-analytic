@@ -26,7 +26,9 @@ BASE_HALF_RANGE = 0.10  # uncertainty half width with no scenario
 RAINFALL_HALF_RANGE = 0.10  # extra half width at a 100% effective rainfall change
 TEMPERATURE_HALF_RANGE = 0.02  # extra half width per degree C of warming or cooling
 MAX_HALF_RANGE = 0.40
-SUPPORTED_CONSTRAINTS = ("avoid_crops", "water_limited")
+# `water_availability` and `equipment` are the names core-api stores per farm. Only the water level
+# has a rule; equipment is accepted and reported as unused (see `engine._gaps`).
+SUPPORTED_CONSTRAINTS = ("avoid_crops", "water_limited", "water_availability", "equipment")
 
 __all__ = ["PRIORITIES", "Adjustment"]
 
@@ -162,7 +164,7 @@ def effective_weights(
     """Weights the farmer set (missing ones default to 0.5), changed by constraints.
     All zero weights fall back to equal weights."""
     used = {name: float(weights.get(name, DEFAULT_WEIGHT)) for name in PRIORITIES}
-    if constraints.get("water_limited") is True:
+    if water_is_limited(constraints):
         used["water_use"] *= WATER_LIMITED_MULTIPLIER
     if sum(used.values()) == 0:
         used = dict.fromkeys(PRIORITIES, 1.0)
@@ -171,6 +173,13 @@ def effective_weights(
 
 def overall_score(scores: Mapping[str, float], weights: Mapping[str, float]) -> float:
     return sum(scores[name] * weights[name] for name in PRIORITIES) / sum(weights.values())
+
+
+def water_is_limited(constraints: Mapping[str, Any]) -> bool:
+    """True for the older flag `water_limited` or for `water_availability` equal to "low"."""
+    return (
+        constraints.get("water_limited") is True or constraints.get("water_availability") == "low"
+    )
 
 
 def avoided_crops(crops: Sequence[Crop], constraints: Mapping[str, Any]) -> list[str]:

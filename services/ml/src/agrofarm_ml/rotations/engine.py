@@ -99,6 +99,12 @@ def _gaps(table: TraitsTable, constraints: Mapping[str, Any]) -> list[str]:
             "The reviewer identity, reviewed revision and corrections are not recorded; "
             "source verification and rule-threshold review are not established."
         )
+    equipment = constraints.get("equipment")
+    if isinstance(equipment, list) and equipment:
+        gaps.append(
+            f"Equipment ({', '.join(str(item) for item in equipment)}) is recorded for this farm, "
+            "but no rule uses it yet: it does not change any score."
+        )
     ignored = rules.unsupported_constraints(constraints)
     if ignored:
         gaps.append(f"These constraints are not understood and were ignored: {', '.join(ignored)}.")
@@ -142,9 +148,14 @@ def _known_strategy(
             f"Rule enso_rainfall_equivalent: {phase} counts as {shift:+.0f}% rainfall, so the "
             f"effective rainfall change is {effective_rain:+.0f}% (provisional rule constant)."
         )
-    if constraints.get("water_limited") is True:
+    if rules.water_is_limited(constraints):
+        name = (
+            "water_availability=low"
+            if constraints.get("water_availability") == "low"
+            else "water_limited"
+        )
         why.append(
-            "Constraint water_limited: the water_use weight is multiplied by "
+            f"Constraint {name}: the water_use weight is multiplied by "
             f"{rules.WATER_LIMITED_MULTIPLIER:g}."
         )
     if hits:

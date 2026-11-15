@@ -118,6 +118,31 @@ def test_water_limited_constraint_raises_the_water_weight() -> None:
     assert limited["income"] == plain["income"]
 
 
+def test_low_water_availability_from_core_api_raises_the_water_weight_like_water_limited() -> None:
+    plain = rules.effective_weights({"water_use": 0.4}, {})
+    low = rules.effective_weights({"water_use": 0.4}, {"water_availability": "low"})
+    assert low["water_use"] == pytest.approx(plain["water_use"] * rules.WATER_LIMITED_MULTIPLIER)
+    assert low["income"] == plain["income"]
+
+
+def test_medium_and_high_water_availability_change_no_weight() -> None:
+    plain = rules.effective_weights({"water_use": 0.4}, {})
+    for level in ("medium", "high"):
+        assert rules.effective_weights({"water_use": 0.4}, {"water_availability": level}) == plain
+
+
+def test_the_water_multiplier_is_applied_once_when_both_forms_are_given() -> None:
+    both = rules.effective_weights(
+        {"water_use": 0.4}, {"water_limited": True, "water_availability": "low"}
+    )
+    assert both["water_use"] == pytest.approx(0.4 * rules.WATER_LIMITED_MULTIPLIER)
+
+
+def test_core_api_constraint_names_are_understood_and_unknown_ones_are_still_listed() -> None:
+    constraints = {"water_availability": "low", "equipment": ["tractor"], "budget": 3}
+    assert rules.unsupported_constraints(constraints) == ["budget"]
+
+
 def test_overall_score_is_the_weighted_mean() -> None:
     scores = dict.fromkeys(rules.PRIORITIES, 0.0) | {"income": 1.0}
     only_income = dict.fromkeys(rules.PRIORITIES, 0.0) | {"income": 1.0}
