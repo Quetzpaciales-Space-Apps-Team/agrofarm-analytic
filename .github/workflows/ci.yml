@@ -109,6 +109,10 @@ jobs:
       - run: docker build -t data-service:ci .
       - name: The image can run the CLI
         run: docker run --rm data-service:ci --version
+      - name: The image can read GeoTIFF files
+        run: >-
+          docker run --rm --entrypoint python data-service:ci
+          -c "import rasterio, agrofarm_data.connectors.soilgrids"
       - name: Trivy image scan
         run: >-
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.2
