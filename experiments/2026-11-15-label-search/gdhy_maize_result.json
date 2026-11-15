@@ -1,0 +1,211 @@
+{
+  "pooled_skill": -0.0631,
+  "years": 22,
+  "rows": 1075,
+  "share_years_positive": 0.545,
+  "el_nino_years_positive": 3,
+  "la_nina_years_positive": 2,
+  "correlation_of_year_means": 0.136,
+  "coverage_p10_p90": 0.633,
+  "per_year": [
+    {
+      "year": 1995,
+      "phase": "neutral",
+      "rows": 50,
+      "skill": -0.111,
+      "mean_actual_pct": 13.68,
+      "mean_p50_pct": -1.5,
+      "coverage": 0.22
+    },
+    {
+      "year": 1996,
+      "phase": "neutral",
+      "rows": 50,
+      "skill": 0.106,
+      "mean_actual_pct": 8.29,
+      "mean_p50_pct": 1.67,
+      "coverage": 0.62
+    },
+    {
+      "year": 1997,
+      "phase": "el_nino",
+      "rows": 50,
+      "skill": 0.084,
+      "mean_actual_pct": -6.29,
+      "mean_p50_pct": -5.45,
+      "coverage": 0.5
+    },
+    {
+      "year": 1998,
+      "phase": "la_nina",
+      "rows": 50,
+      "skill": -0.303,
+      "mean_actual_pct": 0.21,
+      "mean_p50_pct": 9.87,
+      "coverage": 0.76
+    },
+    {
+      "year": 1999,
+      "phase": "la_nina",
+      "rows": 50,
+      "skill": -0.003,
+      "mean_actual_pct": 0.54,
+      "mean_p50_pct": 1.92,
+      "coverage": 0.52
+    },
+    {
+      "year": 2000,
+      "phase": "neutral",
+      "rows": 50,
+      "skill": 0.104,
+      "mean_actual_pct": -2.66,
+      "mean_p50_pct": -1.95,
+      "coverage": 0.9
+    },
+    {
+      "year": 2001,
+      "phase": "neutral",
+      "rows": 50,
+      "skill": 0.01,
+      "mean_actual_pct": 5.01,
+      "mean_p50_pct": -2.02,
+      "coverage": 0.82
+    },
+    {
+      "year": 2002,
+      "phase": "el_nino",
+      "rows": 50,
+      "skill": 0.25,
+      "mean_actual_pct": -5.36,
+      "mean_p50_pct": -7.69,
+      "coverage": 0.96
+    },
+    {
+      "year": 2003,
+      "phase": "neutral",
+      "rows": 50,
+      "skill": 0.155,
+      "mean_actual_pct": -4.26,
+      "mean_p50_pct": -2.68,
+      "coverage": 0.82
+    },
+    {
+      "year": 2004,
+      "phase": "el_nino",
+      "rows": 50,
+      "skill": 0.087,
+      "mean_actual_pct": -10.72,
+      "mean_p50_pct": -2.68,
+      "coverage": 0.34
+    },
+    {
+      "year": 2005,
+      "phase": "neutral",
+      "rows": 50,
+      "skill": 0.024,
+      "mean_actual_pct": -13.21,
+      "mean_p50_pct": -3.45,
+      "coverage": 0.44
+    },
+    {
+      "year": 2006,
+      "phase": "neutral",
+      "rows": 50,
+      "skill": -0.1,
+      "mean_actual_pct": -14.23,
+      "mean_p50_pct": 1.09,
+      "coverage": 0.26
+    },
+    {
+      "year": 2007,
+      "phase": "la_nina",
+      "rows": 50,
+      "skill": -0.026,
+      "mean_actual_pct": 18.18,
+      "mean_p50_pct": 2.44,
+      "coverage": 0.2
+    },
+    {
+      "year": 2008,
+      "phase": "neutral",
+      "rows": 50,
+      "skill": -0.281,
+      "mean_actual_pct": 12.11,
+      "mean_p50_pct": -0.46,
+      "coverage": 0.16
+    },
+    {
+      "year": 2009,
+      "phase": "neutral",
+      "rows": 50,
+      "skill": -1.044,
+      "mean_actual_pct": 6.25,
+      "mean_p50_pct": -10.17,
+      "coverage": 0.48
+    },
+    {
+      "year": 2010,
+      "phase": "la_nina",
+      "rows": 49,
+      "skill": 0.126,
+      "mean_actual_pct": -0.02,
+      "mean_p50_pct": 5.32,
+      "coverage": 0.816
+    },
+    {
+      "year": 2011,
+      "phase": "la_nina",
+      "rows": 46,
+      "skill": -0.543,
+      "mean_actual_pct": -3.82,
+      "mean_p50_pct": 5.79,
+      "coverage": 0.674
+    },
+    {
+      "year": 2012,
+      "phase": "neutral",
+      "rows": 46,
+      "skill": 0.178,
+      "mean_actual_pct": -4.03,
+      "mean_p50_pct": -0.83,
+      "coverage": 0.957
+    },
+    {
+      "year": 2013,
+      "phase": "neutral",
+      "rows": 46,
+      "skill": -0.073,
+      "mean_actual_pct": 1.66,
+      "mean_p50_pct": 5.66,
+      "coverage": 0.913
+    },
+    {
+      "year": 2014,
+      "phase": "neutral",
+      "rows": 46,
+      "skill": 0.007,
+      "mean_actual_pct": 1.24,
+      "mean_p50_pct": -4.32,
+      "coverage": 0.913
+    },
+    {
+      "year": 2015,
+      "phase": "el_nino",
+      "rows": 46,
+      "skill": -0.195,
+      "mean_actual_pct": -0.69,
+      "mean_p50_pct": -6.56,
+      "coverage": 0.804
+    },
+    {
+      "year": 2016,
+      "phase": "la_nina",
+      "rows": 46,
+      "skill": 0.091,
+      "mean_actual_pct": 4.23,
+      "mean_p50_pct": 1.82,
+      "coverage": 0.957
+    }
+  ],
+  "verdict": "no_skill_over_climatology"
+}

@@ -1,0 +1,65 @@
+{
+  "dataset": "ndvi_cell_year",
+  "file": "ndvi_cell_year.parquet",
+  "source": "MODIS MOD13Q1 v061 NDVI (Planetary Computer), ESA WorldCover 2021 v200, CHIRPS v3 monthly, NASA POWER monthly T2M (MERRA-2), NOAA CPC RONI",
+  "retrieved_at": "2026-11-15",
+  "license": "Mixed, one per source. See the manifest of each source dataset. License wording of the MODIS collection on the Planetary Computer is not verified.",
+  "attribution": "NASA LP DAAC MOD13Q1; ESA WorldCover project 2021 (CC BY 4.0); CHIRPS, Climate Hazards Center UC Santa Barbara; NASA POWER; NOAA CPC.",
+  "date_range": {
+    "start": "2000-05-01",
+    "end": "2024-10-31"
+  },
+  "time_step": "one row per cell and rainy season (May to October)",
+  "spatial_resolution": "0.05 degrees (about 5.5 km); NDVI read at about 1 km",
+  "checksum_sha256": "cc5e8df6bb74f6b32096fdf056c35829212cf1f9ef28be849852563edcaeda6c",
+  "source_checksum_sha256": {
+    "power_t2m_monthly_regional.json": "643e41d24948742200149f56956c1856fcc03a73c8cf5548933dfaa9d0c993b3",
+    "enso_monthly.parquet": "63ca1f852ce732f9d690a6241b9953fb1d2ba83b1966f43f416a3cd4d4b6c3fb"
+  },
+  "processing_version": "ndvi-cell-year-0.1.0",
+  "bbox": [
+    -92.5,
+    13.5,
+    -88.0,
+    18.0
+  ],
+  "rows": 24225,
+  "cells": 969,
+  "composites_per_year": {
+    "2000": 12,
+    "2001": 6,
+    "2002": 11,
+    "2003": 11,
+    "2004": 12,
+    "2005": 11,
+    "2006": 11,
+    "2007": 11,
+    "2008": 12,
+    "2009": 11,
+    "2010": 11,
+    "2011": 11,
+    "2012": 12,
+    "2013": 11,
+    "2014": 11,
+    "2015": 11,
+    "2016": 12,
+    "2017": 11,
+    "2018": 11,
+    "2019": 11,
+    "2020": 12,
+    "2021": 14,
+    "2022": 11,
+    "2023": 11,
+    "2024": 12,
+    "2025": 4
+  },
+  "label": "ndvi_peak: maximum NDVI of the season, averaged over the cell with cropland fraction as weight. A proxy for crop condition. It is not yield.",
+  "limitations": [
+    "NDVI overview at a quarter resolution: the pixel reliability band is not applied.",
+    "Clouds are handled only by the seasonal maximum.",
+    "The cropland map is from 2021 and is used for every year.",
+    "Temperature comes from a reanalysis grid of about 50 km, the nearest point.",
+    "Cells with less than 5 % cropland, or with any missing input, have no row."
+  ],
+  "note": "Copy for the record. The checksums of the 311 MODIS composites were removed from this copy to keep it short."
+}
