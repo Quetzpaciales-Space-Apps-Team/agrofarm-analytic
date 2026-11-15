@@ -165,9 +165,9 @@ def test_equipment_is_recorded_but_the_gaps_say_no_rule_uses_it() -> None:
         assert not any("not understood" in gap for gap in strategy["gaps"])
 
 
-def test_no_equipment_means_no_equipment_gap() -> None:
+def test_no_equipment_means_no_gap_about_recorded_equipment() -> None:
     for strategy in run(["maize", "fallow"], constraints=CORE_API_LOW_WATER):
-        assert not any("equipment" in gap.lower() for gap in strategy["gaps"])
+        assert not any("is recorded for this farm" in gap for gap in strategy["gaps"])
 
 
 def test_avoid_crops_penalises_but_never_drops_a_strategy() -> None:
@@ -212,3 +212,48 @@ def test_provenance_names_the_engine_and_the_traits_version() -> None:
     assert "not a trained model" in meta["model_name"]
     assert meta["model_version"] == engine.ENGINE_VERSION
     assert meta["data_versions"]["crop_traits"] == "0.1.0-provisional"
+
+
+@pytest.mark.parametrize("rotation", [["maize", "fallow"], ["unknown"], []])
+def test_current_rotation_does_not_promise_equipment_savings(rotation: list[str]) -> None:
+    current = run(rotation)[0]
+    assert not any("no new equipment" in text.lower() for text in current["benefits"])
+    assert any("equipment" in text.lower() for text in current["gaps"])
+
+
+def test_each_enso_and_avoidance_adjustment_has_an_explanation_and_evidence() -> None:
+    strategies = run(["maize", "fallow"], DRY, constraints={"avoid_crops": ["black_beans"]})
+    for strategy in strategies:
+        sources = {entry["source"] for entry in strategy["evidence"]}
+        assert "rule_constant:enso_rainfall_equivalent" in sources
+        if "black_beans" in strategy["sequence"]:
+            assert "avoid_crops" in " ".join(strategy["why"])
+            assert "rule_constant:avoid_crops" in sources
+
+
+def test_cover_species_and_heuristic_range_are_disclosed() -> None:
+    for strategy in run(["maize", "fallow"]):
+        gaps = " ".join(strategy["gaps"]).lower()
+        assert "not a calibrated probability" in gaps
+        if "cover_crop" in strategy["sequence"]:
+            assert "species" in gaps and "nitrogen" in gaps
+
+
+@pytest.mark.parametrize("rain", [-80.0, -30.0, 0.0, 50.0, 100.0])
+@pytest.mark.parametrize("temperature", [-5.0, 0.0, 8.0])
+@pytest.mark.parametrize("phase", ["neutral", "el_nino", "la_nina"])
+def test_scores_and_intervals_remain_finite_and_bounded_at_contract_limits(
+    rain: float, temperature: float, phase: str
+) -> None:
+    import math
+
+    scenario = {
+        "rainfall_change_pct": rain,
+        "temperature_change_c": temperature,
+        "enso_phase": phase,
+    }
+    for strategy in run(["maize", "fallow"], scenario):
+        values = [strategy["overall_score"], *strategy["scores"].values()]
+        assert all(math.isfinite(value) and 0 <= value <= 1 for value in values)
+        interval = strategy["uncertainty"]
+        assert 0 <= interval["low"] <= strategy["overall_score"] <= interval["high"] <= 1
