@@ -1,0 +1,339 @@
+{
+ "type": "FeatureCollection",
+ "links": [],
+ "features": [
+  {
+   "id": "MOD13Q1.A2025049.h09v07.061.2025070114631",
+   "bbox": [
+    -95.776,
+    9.9459,
+    -80.9271,
+    20.0238
+   ],
+   "type": "Feature",
+   "links": [
+    {
+     "rel": "collection",
+     "type": "application/json",
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/modis-13Q1-061"
+    },
+    {
+     "rel": "self",
+     "type": "application/geo+json",
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/modis-13Q1-061/items/MOD13Q1.A2025049.h09v07.061.2025070114631"
+    }
+   ],
+   "assets": {
+    "250m_16_days_NDVI": {
+     "href": "https://modiseuwest.blob.core.windows.net/modis-061-cogs/MOD13Q1/09/07/2025049/MOD13Q1.A2025049.h09v07.061.2025070114631_250m_16_days_NDVI.tif",
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "16 day NDVI",
+     "raster:bands": [
+      {
+       "unit": "NDVI",
+       "scale": 0.0001,
+       "data_type": "int16",
+       "spatial_resolution": 250
+      }
+     ],
+     "storage:refs": [
+      "azure-modiseuwest-modis-061-cogs"
+     ]
+    },
+    "250m_16_days_pixel_reliability": {
+     "href": "https://modiseuwest.blob.core.windows.net/modis-061-cogs/MOD13Q1/09/07/2025049/MOD13Q1.A2025049.h09v07.061.2025070114631_250m_16_days_pixel_reliability.tif",
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "Quality reliability of VI pixel",
+     "raster:bands": [
+      {
+       "unit": "Rank",
+       "data_type": "int8",
+       "spatial_resolution": 250
+      }
+     ],
+     "storage:refs": [
+      "azure-modiseuwest-modis-061-cogs"
+     ],
+     "classification:classes": [
+      {
+       "value": 0,
+       "description": "Good data, use with confidence"
+      },
+      {
+       "value": 1,
+       "description": "Marginal data, useful, but look at other QA information"
+      },
+      {
+       "value": 2,
+       "description": "Snow/Ice Target covered with snow/ice"
+      },
+      {
+       "value": 3,
+       "description": "Cloudy data"
+      }
+     ]
+    }
+   },
+   "_msft:ts": "2026-10-25T20:53:31.468964Z",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -95.776,
+       20
+      ],
+      [
+       -84.8012,
+       20.0238
+      ],
+      [
+       -80.9271,
+       9.9705
+      ],
+      [
+       -91.3988,
+       9.9459
+      ],
+      [
+       -95.776,
+       20
+      ]
+     ]
+    ]
+   },
+   "_msft:etag": "1c041182-ceb4-41e1-b220-2c8ae3490115",
+   "collection": "modis-13Q1-061",
+   "properties": {
+    "created": "2025-03-11T15:46:31.000000Z",
+    "updated": "2025-03-11T10:53:02.688000Z",
+    "datetime": null,
+    "proj:wkt2": "PROJCS[\"unnamed\",GEOGCS[\"Unknown datum based upon the custom spheroid\",DATUM[\"Not specified (based on custom spheroid)\",SPHEROID[\"Custom spheroid\",6371007.181,0]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]],PROJECTION[\"Sinusoidal\"],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+    "proj:shape": [
+     4800,
+     4800
+    ],
+    "instruments": [],
+    "end_datetime": "2025-03-05T23:59:59.000000Z",
+    "modis:tile-id": "51009007",
+    "proj:geometry": {
+     "type": "Polygon",
+     "coordinates": [
+      [
+       [
+        -8895604.157333,
+        1111950.519667
+       ],
+       [
+        -8895604.157333,
+        2223901.039333
+       ],
+       [
+        -10007554.677,
+        2223901.039333
+       ],
+       [
+        -10007554.677,
+        1111950.519667
+       ],
+       [
+        -8895604.157333,
+        1111950.519667
+       ]
+      ]
+     ]
+    },
+    "proj:transform": [
+     231.65635826395825,
+     0.0,
+     -10007554.677,
+     0.0,
+     -231.65635826374995,
+     2223901.039333
+    ],
+    "start_datetime": "2025-02-18T00:00:00.000000Z",
+    "modis:vertical-tile": 7,
+    "modis:horizontal-tile": 9
+   },
+   "stac_extensions": [
+    "https://stac-extensions.github.io/projection/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/raster/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/classification/v1.0.0/schema.json"
+   ],
+   "stac_version": "1.0.0"
+  },
+  {
+   "id": "MYD13Q1.A2025041.h09v07.061.2025058195852",
+   "bbox": [
+    -95.776,
+    9.9459,
+    -80.9271,
+    20.0238
+   ],
+   "type": "Feature",
+   "links": [
+    {
+     "rel": "collection",
+     "type": "application/json",
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/modis-13Q1-061"
+    },
+    {
+     "rel": "self",
+     "type": "application/geo+json",
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/modis-13Q1-061/items/MYD13Q1.A2025041.h09v07.061.2025058195852"
+    }
+   ],
+   "assets": {
+    "250m_16_days_NDVI": {
+     "href": "https://modiseuwest.blob.core.windows.net/modis-061-cogs/MYD13Q1/09/07/2025041/MYD13Q1.A2025041.h09v07.061.2025058195852_250m_16_days_NDVI.tif",
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "16 day NDVI",
+     "raster:bands": [
+      {
+       "unit": "NDVI",
+       "scale": 0.0001,
+       "data_type": "int16",
+       "spatial_resolution": 250
+      }
+     ],
+     "storage:refs": [
+      "azure-modiseuwest-modis-061-cogs"
+     ]
+    },
+    "250m_16_days_pixel_reliability": {
+     "href": "https://modiseuwest.blob.core.windows.net/modis-061-cogs/MYD13Q1/09/07/2025041/MYD13Q1.A2025041.h09v07.061.2025058195852_250m_16_days_pixel_reliability.tif",
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "Quality reliability of VI pixel",
+     "raster:bands": [
+      {
+       "unit": "Rank",
+       "data_type": "int8",
+       "spatial_resolution": 250
+      }
+     ],
+     "storage:refs": [
+      "azure-modiseuwest-modis-061-cogs"
+     ],
+     "classification:classes": [
+      {
+       "value": 0,
+       "description": "Good data, use with confidence"
+      },
+      {
+       "value": 1,
+       "description": "Marginal data, useful, but look at other QA information"
+      },
+      {
+       "value": 2,
+       "description": "Snow/Ice Target covered with snow/ice"
+      },
+      {
+       "value": 3,
+       "description": "Cloudy data"
+      }
+     ]
+    }
+   },
+   "_msft:ts": "2026-10-25T20:52:21.826702Z",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -95.776,
+       20
+      ],
+      [
+       -84.8012,
+       20.0238
+      ],
+      [
+       -80.9271,
+       9.9705
+      ],
+      [
+       -91.3988,
+       9.9459
+      ],
+      [
+       -95.776,
+       20
+      ]
+     ]
+    ]
+   },
+   "_msft:etag": "d49f21f7-ea34-4549-84fa-c1dc190e7bee",
+   "collection": "modis-13Q1-061",
+   "properties": {
+    "created": "2025-02-28T00:58:52.000000Z",
+    "updated": "2025-02-27T19:17:20.771000Z",
+    "datetime": null,
+    "proj:wkt2": "PROJCS[\"unnamed\",GEOGCS[\"Unknown datum based upon the custom spheroid\",DATUM[\"Not specified (based on custom spheroid)\",SPHEROID[\"Custom spheroid\",6371007.181,0]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]],PROJECTION[\"Sinusoidal\"],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]",
+    "proj:shape": [
+     4800,
+     4800
+    ],
+    "instruments": [],
+    "end_datetime": "2025-02-25T23:59:59.000000Z",
+    "modis:tile-id": "51009007",
+    "proj:geometry": {
+     "type": "Polygon",
+     "coordinates": [
+      [
+       [
+        -8895604.157333,
+        1111950.519667
+       ],
+       [
+        -8895604.157333,
+        2223901.039333
+       ],
+       [
+        -10007554.677,
+        2223901.039333
+       ],
+       [
+        -10007554.677,
+        1111950.519667
+       ],
+       [
+        -8895604.157333,
+        1111950.519667
+       ]
+      ]
+     ]
+    },
+    "proj:transform": [
+     231.65635826395825,
+     0.0,
+     -10007554.677,
+     0.0,
+     -231.65635826374995,
+     2223901.039333
+    ],
+    "start_datetime": "2025-02-10T00:00:00.000000Z",
+    "modis:vertical-tile": 7,
+    "modis:horizontal-tile": 9
+   },
+   "stac_extensions": [
+    "https://stac-extensions.github.io/projection/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/raster/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/classification/v1.0.0/schema.json"
+   ],
+   "stac_version": "1.0.0"
+  }
+ ],
+ "numberReturned": 2
+}

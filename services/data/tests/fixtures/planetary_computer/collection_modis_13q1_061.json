@@ -1,0 +1,138 @@
+{
+ "id": "modis-13Q1-061",
+ "type": "Collection",
+ "title": "MODIS Vegetation Indices 16-Day (250m)",
+ "license": "proprietary",
+ "links": [
+  {
+   "rel": "items",
+   "type": "application/geo+json",
+   "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/modis-13Q1-061/items"
+  },
+  {
+   "rel": "parent",
+   "type": "application/json",
+   "href": "https://planetarycomputer.microsoft.com/api/stac/v1/"
+  },
+  {
+   "rel": "root",
+   "type": "application/json",
+   "href": "https://planetarycomputer.microsoft.com/api/stac/v1/"
+  },
+  {
+   "rel": "self",
+   "type": "application/json",
+   "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/modis-13Q1-061"
+  },
+  {
+   "rel": "http://www.opengis.net/def/rel/ogc/1.0/queryables",
+   "type": "application/schema+json",
+   "title": "Queryables",
+   "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/modis-13Q1-061/queryables"
+  }
+ ],
+ "extent": {
+  "spatial": {
+   "bbox": [
+    [
+     -180,
+     -90,
+     180,
+     90
+    ]
+   ]
+  },
+  "temporal": {
+   "interval": [
+    [
+     "2000-02-18T00:00:00Z",
+     null
+    ]
+   ]
+  }
+ },
+ "keywords": [
+  "NASA",
+  "MODIS",
+  "Satellite",
+  "Global",
+  "Vegetation",
+  "MOD13Q1",
+  "MYD13Q1"
+ ],
+ "item_assets": {
+  "250m_16_days_NDVI": {
+   "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+   "roles": [
+    "data"
+   ],
+   "title": "16 day NDVI",
+   "raster:bands": [
+    {
+     "unit": "NDVI",
+     "scale": 0.0001,
+     "data_type": "int16",
+     "spatial_resolution": 250
+    }
+   ],
+   "storage:refs": [
+    "azure-modiseuwest-modis-061-cogs"
+   ]
+  },
+  "250m_16_days_pixel_reliability": {
+   "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+   "roles": [
+    "data"
+   ],
+   "title": "Quality reliability of VI pixel",
+   "raster:bands": [
+    {
+     "unit": "Rank",
+     "data_type": "int8",
+     "spatial_resolution": 250
+    }
+   ],
+   "storage:refs": [
+    "azure-modiseuwest-modis-061-cogs"
+   ],
+   "classification:classes": [
+    {
+     "value": 0,
+     "description": "Good data, use with confidence"
+    },
+    {
+     "value": 1,
+     "description": "Marginal data, useful, but look at other QA information"
+    },
+    {
+     "value": 2,
+     "description": "Snow/Ice Target covered with snow/ice"
+    },
+    {
+     "value": 3,
+     "description": "Cloudy data"
+    }
+   ]
+  }
+ },
+ "providers": [
+  {
+   "url": "https://lpdaac.usgs.gov/",
+   "name": "NASA LP DAAC at the USGS EROS Center",
+   "roles": [
+    "producer",
+    "licensor",
+    "processor"
+   ]
+  },
+  {
+   "url": "https://planetarycomputer.microsoft.com",
+   "name": "Microsoft",
+   "roles": [
+    "host",
+    "processor"
+   ]
+  }
+ ],
+ "description": "The Moderate Resolution Imaging Spectroradiometer (MODIS) Vegetation Indices Version 6.1 data are generated every 16 days at 250 meter (m) spatial resolution as a Level 3 product. The MOD13Q1 product provides two primary vegetation layers. The first is the Normalized Difference Vegetation Index (NDV"
+}
