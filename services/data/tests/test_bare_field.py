@@ -30,7 +30,7 @@ def test_a_run_of_low_observations_is_one_period_with_its_dates_and_values() -> 
     assert len(periods) == 1
     row = periods.iloc[0]
     assert row["start"] == pd.Timestamp("2020-01-17")
-    assert row["end"] == pd.Timestamp("2020-03-05")
+    assert row["end"] == pd.Timestamp("2020-02-18")  # the last low composite: 01-17, 02-02, 02-18
     assert row["observations"] == 3
     assert row["ndvi_mean"] == pytest.approx(0.15)
     assert row["ndvi_min"] == pytest.approx(0.1)
