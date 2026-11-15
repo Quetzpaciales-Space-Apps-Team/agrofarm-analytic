@@ -80,10 +80,15 @@ def test_probes_answer(client: TestClient, path: str, status: str) -> None:
     assert response.json() == {"status": status}
 
 
-def test_models_lists_the_stub_and_says_it_is_a_stub(client: TestClient) -> None:
+def test_models_lists_the_stub_and_the_rule_engine_and_says_neither_is_trained(
+    client: TestClient,
+) -> None:
     body = client.get("/v1/models").json()
     Draft202012Validator(schema_of("ModelList")).validate(body)
-    assert [model["status"] for model in body["items"]] == ["stub"]
+    assert [model["status"] for model in body["items"]] == ["stub", "rule_engine"]
+    engine = body["items"][1]
+    assert "not a trained model" in engine["notes"].lower()
+    assert engine["data_versions"] == {"crop_traits": "0.1.0-provisional"}
 
 
 def test_simulate_matches_the_contract_and_carries_provenance(client: TestClient) -> None:
@@ -186,7 +191,9 @@ def test_farmer_priorities_change_the_ranking(client: TestClient) -> None:
         0.0,
     )
     assert best({**zero, "erosion_reduction": 1.0}) == "maize_cover_crop"
-    assert best({**zero, "nitrogen_fixing": 1.0}) == "maize_beans"
+    # The traits table gives the cover crop some nitrogen fixing (0.5, provisional), so the
+    # best sequence for nitrogen is one that has black beans, not necessarily the shortest.
+    assert "beans" in best({**zero, "nitrogen_fixing": 1.0})
 
 
 def test_all_zero_weights_fall_back_to_equal_weights(client: TestClient) -> None:
@@ -223,3 +230,11 @@ def test_current_rotation_equal_to_an_alternative_is_not_listed_twice(client: Te
     strategies = client.post("/v1/rotations/score", json=request).json()["strategies"]
     sequences = [tuple(s["sequence"]) for s in strategies]
     assert len(sequences) == len(set(sequences)) >= 3
+
+
+def test_rotation_provenance_says_rule_engine_with_provisional_traits(client: TestClient) -> None:
+    provenance = client.post("/v1/rotations/score", json=ROTATIONS).json()["provenance"]
+    assert "rule engine" in provenance["model_name"]
+    assert "not a trained model" in provenance["model_name"]
+    assert provenance["model_version"].startswith("rules-")
+    assert provenance["data_versions"]["crop_traits"].endswith("-provisional")

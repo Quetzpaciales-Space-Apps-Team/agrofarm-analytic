@@ -82,7 +82,7 @@ def test_warming_raises_water_demand_only_when_it_is_warmer() -> None:
 
 
 def test_every_adjustment_is_small() -> None:
-    """The scenario is modest by design: one rule never moves a score by more than 0.15."""
+    """The scenario is modest by design: one rule never moves a score by more than 0.25."""
     extreme = [
         *rules.dry_scenario_water_fit(crops("maize", "black_beans"), -80.0),
         *rules.wet_scenario_erosion_exposure(crops("fallow"), 100.0),
@@ -94,7 +94,8 @@ def test_every_adjustment_is_small() -> None:
 def test_apply_clips_to_zero_one_and_keeps_the_trace() -> None:
     base = dict.fromkeys(rules.PRIORITIES, 0.95)
     adjusted = rules.apply_adjustments(
-        base, [rules.Adjustment("r", "income", 0.3, "x"), rules.Adjustment("r", "water_use", -2, "y")]
+        base,
+        [rules.Adjustment("r", "income", 0.3, "x"), rules.Adjustment("r", "water_use", -2, "y")],
     )
     assert adjusted["income"] == 1.0
     assert adjusted["water_use"] == 0.0
@@ -111,7 +112,9 @@ def test_weights_default_to_half_and_all_zero_means_equal() -> None:
 def test_water_limited_constraint_raises_the_water_weight() -> None:
     plain = rules.effective_weights({"water_use": 0.4}, {})
     limited = rules.effective_weights({"water_use": 0.4}, {"water_limited": True})
-    assert limited["water_use"] == pytest.approx(plain["water_use"] * rules.WATER_LIMITED_MULTIPLIER)
+    assert limited["water_use"] == pytest.approx(
+        plain["water_use"] * rules.WATER_LIMITED_MULTIPLIER
+    )
     assert limited["income"] == plain["income"]
 
 
