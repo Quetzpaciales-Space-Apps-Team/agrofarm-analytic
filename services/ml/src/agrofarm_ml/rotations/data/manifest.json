@@ -5,7 +5,17 @@
   "generated_by": "Claude Code (claude-sonnet-5-5), 2026-11-15",
   "reviewed_by": null,
   "pilot_crops": "maize, black_beans, cover_crop, with fallow as the bare-field option. Decided in agrofarm-docs ADR 0004; the trait VALUES below stay provisional.",
-  "review_note": "Needs review by a local agronomist before any number is shown as more than a placeholder (AGR-001).",
+  "review_note": "The project owner confirmed that a person with agronomy knowledge reviewed the crop traits. Reviewer identity, exact reviewed revision and corrections were not supplied. Source verification is not established by this confirmation; retain provisional source status until the review record is completed.",
+  "human_review_confirmation": {
+    "review_occurred": true,
+    "confirmed_by": "eldmark",
+    "confirmed_on": "2026-11-15",
+    "reviewer_role": "Person with agronomy knowledge, as confirmed by the project owner",
+    "reviewer_identity": null,
+    "reviewed_revision": null,
+    "corrections": null,
+    "scope": "Project crop-traits table. Does not establish review of rotation thresholds or photo-treatment guidance."
+  },
   "values_verified_against_sources": false,
   "scale": "Traits on a 0..1 scale: 0 is the lowest level of the trait, 1 the highest. water_demand is demand, so a higher value means MORE water needed.",
   "sources": {

@@ -1,8 +1,8 @@
 """Versioned crop traits table for the pilot crops (ML-038, ADR 0004).
 
 Crop traits live in packaged data (`data/crop_traits.json` plus `data/manifest.json`), not in
-code. The table is PROVISIONAL: no agronomist has reviewed it, and the manifest says so. This
-module loads it, validates its schema and resolves crop names and aliases. It does no scoring.
+code. Source status remains PROVISIONAL; the manifest separately records owner-confirmed review.
+This module validates the schema and resolves crop names and aliases. It does no scoring.
 """
 
 import json
