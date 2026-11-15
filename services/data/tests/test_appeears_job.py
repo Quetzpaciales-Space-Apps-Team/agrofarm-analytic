@@ -424,3 +424,27 @@ def test_the_command_rejects_a_bad_box_before_any_call(tmp_path: Path, credentia
             [*bad, "--raw-dir", str(tmp_path), "--out", str(tmp_path)], appeears_transport=transport
         )
     assert transport.calls == []
+
+
+def test_the_usable_share_can_be_lowered_from_the_command_and_is_recorded(
+    tmp_path: Path, credentials: None
+) -> None:
+    assert (
+        command(tmp_path, ["--min-usable-fraction", "0.4"], appeears_transport=BundleTransport())
+        == 0
+    )
+    manifest = json.loads(
+        (tmp_path / "clean" / "appeears_modis_13q1_vegetation.manifest.json").read_text()
+    )
+    assert manifest["quality_rule"]["min_usable_fraction"] == 0.4
+    assert manifest["status_counts"] == {"ok": 3}  # the first composite has 47.5 % usable pixels
+
+
+@pytest.mark.parametrize("value", ["0", "-0.1", "1.5", "abc"])
+def test_a_usable_share_outside_zero_to_one_is_refused(
+    tmp_path: Path, credentials: None, value: str
+) -> None:
+    transport = BundleTransport()
+    with pytest.raises(SystemExit):
+        command(tmp_path, ["--min-usable-fraction", value], appeears_transport=transport)
+    assert transport.calls == []
