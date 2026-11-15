@@ -1,0 +1,92 @@
+{
+ "task_id": "4d960e29-8ead-4879-be97-62992af7551f",
+ "bundle_type": "area",
+ "created": "2026-11-15T21:49:09.019521",
+ "updated": "2026-11-15T22:03:21.262347",
+ "files": [
+  {
+   "file_id": "b7372eba-2efb-42d9-87e1-f6e9d0235f82",
+   "file_name": "MOD13Q1-061-250m-16-days-pixel-reliability-lookup.csv",
+   "file_size": 165,
+   "file_type": "csv",
+   "sha256": "ef0cde2de2606d86a91d673695401be1cc256a3f187c240555546dfde1e29aa0"
+  },
+  {
+   "file_id": "c8533994-eb97-4857-8d7a-a13c990bb183",
+   "file_name": "VNP13A1-002-500-m-16-days-pixel-reliability-lookup.csv",
+   "file_size": 102,
+   "file_type": "csv",
+   "sha256": "2e306d86c61fcd261f003170e37fa85e57238d45313290e9ec3f433352493fa4"
+  },
+  {
+   "file_id": "0e866625-fc72-4462-bb1b-68462bc07c90",
+   "file_name": "MOD13Q1-061-250m-16-days-pixel-reliability-Statistics-QA.csv",
+   "file_size": 337,
+   "file_type": "csv",
+   "sha256": "60b4b25294b0eb8e9ad677e012ac9eed0995917da5e30af4a72013c60e6caade"
+  },
+  {
+   "file_id": "8803222d-b8de-4f16-9799-1aee051ab9e7",
+   "file_name": "VNP13A1-002-500-m-16-days-pixel-reliability-Statistics-QA.csv",
+   "file_size": 769,
+   "file_type": "csv",
+   "sha256": "07f01ced1971848cc28f2dc8c31d3e176e1593351c97ac92171e1d2f6ae263bb"
+  },
+  {
+   "file_id": "6d5ffb08-2cf4-4ca3-a7c0-65ab6c204b37",
+   "file_name": "MOD13Q1-061-Statistics.csv",
+   "file_size": 1351,
+   "file_type": "csv",
+   "sha256": "4e7d29e17a2270e43d050391a09755f63d43cc30acba835a79f29371170e5bd4"
+  },
+  {
+   "file_id": "388aebee-cb08-4ea5-89ab-fea47b42cfa1",
+   "file_name": "SPL4SMGP-008-Statistics.csv",
+   "file_size": 122372,
+   "file_type": "csv",
+   "sha256": "60c01aa579047dd26adfcd199ef3d3d9da174bb00bb18de8b014799ac995881a"
+  },
+  {
+   "file_id": "5cbad1af-f95e-48e3-a87d-e7b850f80013",
+   "file_name": "VNP13A1-002-Statistics.csv",
+   "file_size": 2569,
+   "file_type": "csv",
+   "sha256": "2fbb2fc954974e7a7012640ab23f8af88093be61b32d3280541255f08bd95ac2"
+  },
+  {
+   "file_id": "bec11617-17b2-4d88-a4f9-14a41cce572d",
+   "file_name": "agrofarm-probe-2025-06-request.json",
+   "file_size": 1476,
+   "file_type": "json",
+   "sha256": "ec50a02cce1c96f3b7aea841d67416d2e45f237fbccbc84481432cd04fc5c17c"
+  },
+  {
+   "file_id": "3f83b77d-9eeb-4834-9d7c-8f99921bd19e",
+   "file_name": "README.md",
+   "file_size": 41258,
+   "file_type": "txt",
+   "sha256": "e5ee367960cf23eee78efe02bf0700f8711507ec461640ff42db84fb4af4e9d0"
+  },
+  {
+   "file_id": "b374a336-a484-4ba4-a841-5933e4531525",
+   "file_name": "MOD13Q1.061_2025137_to_2025181/MOD13Q1.061__250m_16_days_EVI_doy2025145000000_aid0001.tif",
+   "file_size": 43414,
+   "file_type": "tif",
+   "sha256": "747ed54376ec67fa3333f80993ea87adc5be317e4f81dff45754f026b52a7b98"
+  },
+  {
+   "file_id": "9e66822d-1751-401c-9544-08ab134ee6e2",
+   "file_name": "MOD13Q1.061_2025137_to_2025181/MOD13Q1.061__250m_16_days_EVI_doy2025161000000_aid0001.tif",
+   "file_size": 43950,
+   "file_type": "tif",
+   "sha256": "cf65a48d3a5c37ae30055bf64a2c9817b180ba325cb657f836cf88820564c8a4"
+  },
+  {
+   "file_id": "4c8cc908-261f-4f16-a80e-e16bee3417b8",
+   "file_name": "MOD13Q1.061_2025137_to_2025181/MOD13Q1.061__250m_16_days_EVI_doy2025177000000_aid0001.tif",
+   "file_size": 39954,
+   "file_type": "tif",
+   "sha256": "adf47bb882c38e3f5b8607b155692a83516ddaca6497cf812872259a35c23ff9"
+  }
+ ]
+}
