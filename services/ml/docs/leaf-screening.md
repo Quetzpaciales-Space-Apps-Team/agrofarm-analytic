@@ -19,10 +19,12 @@ Keep downloaded images, archives and trained models outside git:
 ```bash
 uv run python -m agrofarm_ml.leaves.training \
   --archive /path/to/Corn-Leaf-Disease-v1.zip \
-  --out /path/to/models/maize-leaf/0.1.0
+  --out /path/to/models/maize-leaf/0.1.1
 ```
 
 The output directory contains `model.lgb.txt`, `model_card.json` and `split_manifest.json`. The card records archive and model checksums, dataset version, exclusions, grouping, metrics and limitations. The manifest records the split of every included file. Test-only synthetic images verify training and loading mechanics; their metrics are never reported as real-data performance.
+
+Source images are bounded at 25 MiB / 64 million pixels and normalized to at most 1024 pixels per side using lossless PNG staging. Runtime uploads keep the stricter public limits. Both paths use the same orientation/downsampling and feature extraction; a regression test checks feature equality. Real-data results and the source audit are recorded in `experiments/2026-11-15-maize-leaf/` at the repository root.
 
 ## Internal inference contract
 

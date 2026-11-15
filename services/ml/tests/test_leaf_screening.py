@@ -181,6 +181,8 @@ def test_configured_endpoint_handles_images_and_rejects_corrupt_input(
     monkeypatch.setenv("LEAF_MODEL_DIR", "/test-artifact")
     monkeypatch.setattr(LeafModel, "load", lambda _: model)
     client = TestClient(create_app())
+    loaded = client.get("/v1/models").json()["items"]
+    assert any(item["version"] == "test-only" and item["status"] == "trained" for item in loaded)
     result = client.post(
         "/v1/leaves/assess", content=image_bytes(), headers={"Content-Type": "image/png"}
     )
@@ -219,3 +221,11 @@ def test_training_normalizes_large_source_images_without_relaxing_upload_limit()
     normalized = normalize_source_image(raw)
     assert len(normalized) < 5 * 1024 * 1024
     assert np.isfinite(image_features(normalized)).all()
+
+
+def test_training_and_inference_use_identical_image_features() -> None:
+    rng = np.random.default_rng(5)
+    data = io.BytesIO()
+    Image.fromarray(rng.integers(0, 255, (384, 512, 3), dtype=np.uint8)).save(data, format="PNG")
+    raw = data.getvalue()
+    assert np.array_equal(image_features(raw), image_features(normalize_source_image(raw)))

@@ -55,7 +55,21 @@ def create_app(leaf_model: LeafModel | None = None) -> FastAPI:
 
     @app.get("/v1/models")
     def list_models() -> dict[str, Any]:
-        return {"items": [*stub.MODELS, engine.model_card()]}
+        items = [*stub.MODELS, engine.model_card()]
+        if leaf_model is not None:
+            items.append(
+                {
+                    "name": "maize-leaf-condition-screening",
+                    "version": leaf_model.card["model_version"],
+                    "target": "maize_leaf_condition",
+                    "unit": "uncalibrated_class_score",
+                    "status": "trained",
+                    "notes": "Candidate model. Not field validated; scores are not calibrated. "
+                    "Local agronomy review is required.",
+                    "data_versions": leaf_model.card.get("data_versions", {}),
+                }
+            )
+        return {"items": items}
 
     @app.post("/v1/simulate")
     def simulate(request: SimulateRequest) -> dict[str, Any]:

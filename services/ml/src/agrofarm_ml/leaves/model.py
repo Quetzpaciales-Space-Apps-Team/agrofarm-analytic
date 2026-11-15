@@ -16,7 +16,7 @@ from numpy.typing import NDArray
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 CLASSES = ("common_rust", "corn_leaf_blight", "gray_leaf_spot", "healthy", "insect_damage")
-FEATURE_VERSION = "rgb-hsv-texture-1"
+FEATURE_VERSION = "rgb-hsv-texture-2"
 MAX_BYTES = 5 * 1024 * 1024
 MAX_PIXELS = 16_000_000
 SOURCE = "https://data.mendeley.com/datasets/hmkd6nbngr/1"
@@ -53,6 +53,7 @@ def decoded_image(data: bytes) -> Image.Image:
                 raise ValueError("Only JPEG and PNG images are supported")
             if image.width * image.height > MAX_PIXELS:
                 raise OverflowError("Image exceeds the decoded pixel limit")
+            image.draft("RGB", (1024, 1024))
             image.load()
             return ImageOps.exif_transpose(image).convert("RGB")
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
@@ -60,7 +61,9 @@ def decoded_image(data: bytes) -> Image.Image:
 
 
 def image_features(data: bytes) -> NDArray[np.float64]:
-    image = decoded_image(data).resize((64, 64))
+    image = decoded_image(data)
+    image.thumbnail((1024, 1024))
+    image = image.resize((64, 64))
     spatial = np.asarray(image.resize((16, 16)), dtype=float).ravel() / 255
     hsv = np.asarray(image.convert("HSV"), dtype=float)
     histograms = [

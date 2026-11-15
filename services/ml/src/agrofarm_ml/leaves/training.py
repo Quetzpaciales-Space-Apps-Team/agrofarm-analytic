@@ -57,7 +57,7 @@ def normalize_source_image(data: bytes) -> bytes:
         rgb = ImageOps.exif_transpose(image).convert("RGB")
         rgb.thumbnail((1024, 1024))
         output = io.BytesIO()
-        rgb.save(output, format="JPEG", quality=90)
+        rgb.save(output, format="PNG")
     return output.getvalue()
 
 
@@ -170,12 +170,12 @@ def train(archive: Path, out: Path) -> dict[str, Any]:
     with archive.open("rb") as stream:
         archive_hash = hashlib.file_digest(stream, "sha256").hexdigest()
     card = {
-        "model_version": "maize-leaf-lightgbm-0.1.0",
+        "model_version": "maize-leaf-lightgbm-0.1.1",
         "status": "candidate_not_field_validated",
         "algorithm": "LightGBM over RGB spatial, HSV histogram and texture features",
         "classes": list(CLASSES),
         "source_preprocessing": (
-            "EXIF orientation, at most 1024 pixels per side, JPEG quality 90; "
+            "EXIF orientation, at most 1024 pixels per side, lossless PNG staging; "
             "public uploads retain the 5 MiB / 16 million pixel limit"
         ),
         "feature_version": FEATURE_VERSION,
