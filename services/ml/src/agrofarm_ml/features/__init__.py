@@ -1,4 +1,7 @@
-"""Feature pipeline: one row per month with the rainfall total and the ENSO state."""
+"""Feature pipeline: one row per month with the rainfall total and the ENSO state.
+
+Submodules: validation (input tables), anomalies (against a per-cell climatology), clean_tables
+(read data-service output by manifest) and pipeline (the cell and month table)."""
 
 import numpy as np
 import pandas as pd
