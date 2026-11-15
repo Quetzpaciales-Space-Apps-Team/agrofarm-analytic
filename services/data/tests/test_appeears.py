@@ -171,7 +171,7 @@ def test_a_failed_login_does_not_leak_the_password() -> None:
     assert "hunter2-password" not in str(error.value)
 
 
-# --- the task is submitted once, resumed and never blocks ------------------------------------------
+# --- the task is submitted once, resumed and never blocks ---------------------------
 
 
 def make_request() -> dict[str, Any]:
