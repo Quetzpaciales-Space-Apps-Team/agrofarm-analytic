@@ -29,11 +29,17 @@ def test_one_row_per_pilot_crop() -> None:
     assert len(table.rows) == len(PILOT_CROPS)
 
 
-def test_manifest_states_version_status_and_that_nobody_reviewed_it_yet() -> None:
+def test_manifest_preserves_source_status_and_records_owner_confirmed_review() -> None:
     manifest = load_traits().manifest
     assert manifest["version"] == "0.1.0"
     assert manifest["status"] == "provisional"
     assert manifest["reviewed_by"] is None
+    review = manifest["human_review_confirmation"]
+    assert review["confirmed_by"] == "eldmark"
+    assert review["confirmed_on"] == "2026-11-15"
+    assert review["review_occurred"] is True
+    assert review["reviewer_identity"] is None
+    assert manifest["values_verified_against_sources"] is False
     assert "claude-sonnet-5-5" in manifest["generated_by"]
     assert manifest["sources"], "the manifest lists the source catalogue"
 
