@@ -1,9 +1,13 @@
 """Cell and year table for the experimental NDVI model: label, rainfall, temperature and ENSO."""
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 
+from agrofarm_data.labels.ndvi_job import power_season_temperature
 from agrofarm_data.labels.ndvi_table import CellGrid, TableInputs, build_cell_year_table
 
 NAN = float("nan")
@@ -71,3 +75,28 @@ def test_a_year_without_temperature_or_enso_has_no_rows() -> None:
     inputs = _inputs(temperature={2001: np.array([[22.0, 23.0]])})
     table = build_cell_year_table(GRID, inputs)
     assert set(table["year"]) == {2001}
+
+
+def test_power_temperature_is_the_season_mean_of_the_nearest_point_and_fill_is_missing(
+    tmp_path: Path,
+) -> None:
+    def point(lon: float, lat: float, value: float, june: float) -> dict[str, object]:
+        series = {f"2001{month:02d}": value for month in range(1, 13)} | {"200113": value}
+        series["200106"] = june
+        return {
+            "geometry": {"coordinates": [lon, lat, 0.0]},
+            "properties": {"parameter": {"T2M": series}},
+        }
+
+    payload = {
+        "header": {"fill_value": -999.0},
+        "features": [point(-90.75, 14.75, 20.0, 26.0), point(-90.25, 14.75, 25.0, -999.0)],
+    }
+    path = tmp_path / "power.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    temperature = power_season_temperature(path, GRID)
+
+    assert set(temperature) == {2001}
+    assert temperature[2001][0, 0] == pytest.approx(21.0)  # five months at 20, June at 26
+    assert np.isnan(temperature[2001][0, 1])  # a fill value is never averaged in
