@@ -10,6 +10,7 @@ AI coding assistants were used as tools to write and review code, tests, CI work
 
 | Tool | Model | Used by | Used for |
 |---|---|---|---|
+| OpenAI Codex | `gpt-6.1-sol` | `JorgeVilledaS` | ML-040 explanation corrections, contract-boundary regression tests, reproducible synthetic score sensitivity experiment and evaluation documentation. No field calibration performed; human review pending. |
 | OpenAI Codex | `gpt-6.1-sol` | `JorgeVilledaS` | ML-038 crop-trait numeric validation, regression tests and local checks. Human review pending. |
 | Claude Code | `claude-fable-5-2` | `eldmark` | Repository rules, CI, scaffolds, connectors, tests, documentation, data analysis |
 | Codex | `gpt-6` | `jdivass` | Connector code, recorded-fixture tests, documentation, review |

@@ -215,7 +215,11 @@ def test_scores_and_intervals_remain_finite_and_bounded_at_contract_limits(
 ) -> None:
     import math
 
-    scenario = {"rainfall_change_pct": rain, "temperature_change_c": temperature, "enso_phase": phase}
+    scenario = {
+        "rainfall_change_pct": rain,
+        "temperature_change_c": temperature,
+        "enso_phase": phase,
+    }
     for strategy in run(["maize", "fallow"], scenario):
         values = [strategy["overall_score"], *strategy["scores"].values()]
         assert all(math.isfinite(value) and 0 <= value <= 1 for value in values)

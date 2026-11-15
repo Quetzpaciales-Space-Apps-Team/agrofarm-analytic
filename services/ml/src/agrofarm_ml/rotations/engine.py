@@ -12,7 +12,7 @@ from agrofarm_ml.rotations.rules import PRIORITIES, Adjustment
 from agrofarm_ml.rotations.traits import Crop, TraitsTable, load_traits
 
 ENGINE_NAME = "agrofarm-rotation-rule-engine"
-ENGINE_VERSION = "rules-0.1.0"
+ENGINE_VERSION = "rules-0.1.1"
 MODEL_NAME = f"{ENGINE_NAME} (rule engine, provisional crop traits, not a trained model)"
 GOOD_FIT = 0.65  # a priority score at or above this is listed as a benefit
 LOW_INCOME = 0.35
@@ -90,6 +90,8 @@ def _gaps(table: TraitsTable, constraints: Mapping[str, Any]) -> list[str]:
         f"Crop traits table {table.version} retains {table.manifest['status']} source status: "
         f"{LOCAL_REVIEW} before applying it to this farm.",
         "No yield records, soil data or planting dates of this farm enter the scores.",
+        "Equipment needs and costs have not been assessed for this farm.",
+        "The score range is a provisional heuristic, not a calibrated probability of success.",
     ]
     if table.manifest.get("human_review_confirmation", {}).get("review_occurred") is True:
         gaps.append(
@@ -145,6 +147,11 @@ def _known_strategy(
             "Constraint water_limited: the water_use weight is multiplied by "
             f"{rules.WATER_LIMITED_MULTIPLIER:g}."
         )
+    if hits:
+        why.append(
+            f"Constraint avoid_crops: contains {', '.join(hits)}; the overall score is reduced "
+            f"by {rules.AVOIDED_CROP_PENALTY:g} before clipping to 0..1."
+        )
     if not why:
         why.append("No rule moved the base scores, which are the mean of the crop traits.")
     top = max(PRIORITIES, key=lambda name: scores[name] * used[name])
@@ -167,6 +174,18 @@ def _known_strategy(
         }
         for item in {i.rule: i for i in adjustments}.values()
     ]
+    for name, active in (
+        ("enso_rainfall_equivalent", phase != "neutral"),
+        ("water_limited", constraints.get("water_limited") is True),
+        ("avoid_crops", bool(hits)),
+    ):
+        if active:
+            evidence.append(
+                {
+                    "statement": f"{name} uses a provisional rule, not a measured effect.",
+                    "source": f"rule_constant:{name}",
+                }
+            )
 
     benefits = [
         f"Good fit for {name} (score {scores[name]:.2f}, provisional)."
@@ -174,10 +193,16 @@ def _known_strategy(
         if scores[name] >= GOOD_FIT
     ]
     if current:
-        benefits.insert(0, "Known practice, no new equipment.")
+        benefits.insert(0, "Provides the supplied baseline for comparison.")
     if not benefits:
         benefits.append("No priority scores high on the current weights.")
 
+    gaps = _gaps(table, constraints)
+    if any(crop.group == "cover" for crop in crops):
+        gaps.append(
+            "The cover crop species is not selected; nitrogen fixation assumes a legume "
+            "mixture and is not verified for this farm."
+        )
     risks = _risks(crops, scores, effective_rain, hits)
     return {
         "id": "current" if current else strategy_id,
@@ -190,7 +215,7 @@ def _known_strategy(
         "why": why,
         "evidence": evidence,
         "benefits": benefits,
-        "gaps": _gaps(table, constraints),
+        "gaps": gaps,
         "risks": [{"description": text, "needs_local_review": True} for text in risks],
         "needs_local_review": True,
     }
@@ -241,7 +266,7 @@ def _unknown_strategy(
             "priority is scored above or below 0.5.",
         ],
         "evidence": [{"statement": "Rotation as reported by the farm.", "source": "farm_profile"}],
-        "benefits": ["Known practice, no new equipment."],
+        "benefits": ["Provides the supplied baseline for comparison."],
         "gaps": [gap, *_gaps(table, constraints)],
         "risks": [
             {
