@@ -113,7 +113,9 @@ jobs:
         run: >-
           docker run --rm --entrypoint python data-service:ci
           -c "import rasterio, agrofarm_data.connector, agrofarm_data.manifest, agrofarm_data.raw_store,
+          agrofarm_data.connectors.chirps,
           agrofarm_data.connectors.enso, agrofarm_data.connectors.insivumeh,
+          agrofarm_data.connectors.meteomatics,
           agrofarm_data.connectors.nasa_power, agrofarm_data.connectors.planetary_computer,
           agrofarm_data.connectors.soilgrids,
           agrofarm_data.connectors.worldcover, agrofarm_data.terrain.pipeline;

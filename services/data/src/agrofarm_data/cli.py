@@ -1,20 +1,23 @@
 """Command line entry point for the data jobs. Each connector adds its own subcommand."""
 
 import argparse
+import datetime as dt
 import json
 import os
 import sys
+import tempfile
 from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
 from agrofarm_data import __version__
 from agrofarm_data.chirps_job import DirectoryUploader, run_chirps_job
-from agrofarm_data.connector import run_job
+from agrofarm_data.connector import Connector, run_job
 from agrofarm_data.connectors import (
     chirps,
     enso,
     insivumeh,
+    meteomatics,
     nasa_power,
     planetary_computer,
     soilgrids,
@@ -40,8 +43,20 @@ def build_parser() -> argparse.ArgumentParser:
     indices.add_argument("--roni", type=Path, required=True, help="Path to RONI.ascii.txt")
     indices.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
 
-    power = commands.add_parser("nasa-power", help="Clean a NASA POWER daily point CSV")
-    power.add_argument("--input", type=Path, required=True, help="Path to the POWER daily .csv")
+    power = commands.add_parser(
+        "nasa-power", help="Clean a NASA POWER daily point CSV, or fetch point or regional data"
+    )
+    power.add_argument("--input", type=Path, help="Path to the POWER daily .csv (offline mode)")
+    power.add_argument("--fetch", choices=["point", "regional"])
+    power.add_argument("--lat", type=float, help="Latitude for --fetch point")
+    power.add_argument("--lon", type=float, help="Longitude for --fetch point")
+    power.add_argument(
+        "--bbox", type=float, nargs=4, metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="Area for --fetch regional: 2 to 10 degrees per axis, EPSG:4326",
+    )  # fmt: skip
+    power.add_argument("--start", type=dt.date.fromisoformat, help="YYYY-MM-DD, for --fetch")
+    power.add_argument("--end", type=dt.date.fromisoformat, help="YYYY-MM-DD, for --fetch")
+    power.add_argument("--raw", type=Path, help="Raw store directory (write once), for --fetch")
     power.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
 
     soil = commands.add_parser("soilgrids", help="Crop and scale the SoilGrids layers for an area")
@@ -142,6 +157,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--raw-dir", type=Path, default=None, help="Raw store folder (default: <out>/raw)"
     )
 
+    weather = commands.add_parser(
+        "meteomatics-forecast",
+        help="Daily point forecast from Meteomatics (cached, with a daily request budget)",
+    )
+    weather.add_argument("--lat", type=float, required=True)
+    weather.add_argument("--lon", type=float, required=True)
+    weather.add_argument("--days", type=int, default=7)
+    weather.add_argument("--cache", type=Path, required=True, help="Cache and budget directory")
+    weather.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
+    weather.add_argument("--daily-limit", type=int, default=meteomatics.DEFAULT_DAILY_LIMIT)
+
     rain = commands.add_parser(
         "chirps", help="Read CHIRPS rainfall windows and write a monthly dataset"
     )
@@ -149,10 +175,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--bbox", type=float, nargs=4, required=True,
         metavar=("WEST", "SOUTH", "EAST", "NORTH"), help="Area in EPSG:4326",
     )  # fmt: skip
-    rain.add_argument("--start", required=True, help="First day, YYYY-MM-DD")
-    rain.add_argument("--end", required=True, help="Last day, YYYY-MM-DD")
+    rain.add_argument("--start", type=dt.date.fromisoformat, required=True, help="YYYY-MM-DD")
+    rain.add_argument("--end", type=dt.date.fromisoformat, required=True, help="YYYY-MM-DD")
     rain.add_argument("--out", type=Path, help="Local clean output directory")
-    rain.add_argument("--raw-dir", type=Path, help="Local immutable raw store")
+    rain.add_argument(
+        "--raw-dir", "--raw", dest="raw_dir", type=Path, help="Local immutable raw store"
+    )
     rain.add_argument(
         "--gcs", action="store_true", help="Run as a Cloud Run Job and upload to Cloud Storage"
     )
@@ -177,17 +205,33 @@ def _check_ndvi_args(parser: argparse.ArgumentParser, args: argparse.Namespace) 
         parser.error("--max-items must be at least 1")
 
 
+def _check_power_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    if (args.input is None) == (args.fetch is None):
+        parser.error("give exactly one of --input (a CSV) or --fetch (point or regional)")
+    if args.fetch is None:
+        return
+    if args.start is None or args.end is None or args.raw is None:
+        parser.error("--fetch needs --start, --end and --raw")
+    if args.fetch == "point" and (args.lat is None or args.lon is None):
+        parser.error("--fetch point needs --lat and --lon")
+    if args.fetch == "regional" and args.bbox is None:
+        parser.error("--fetch regional needs --bbox WEST SOUTH EAST NORTH")
+
+
 def main(
     argv: Sequence[str] | None = None,
     *,
     http: planetary_computer.HttpJson = planetary_computer.http_json,
     reader: planetary_computer.RasterReader = planetary_computer.read_window,
+    power_transport: nasa_power.Transport | None = None,
     chirps_window_reader: chirps.WindowReader | None = None,
     gcs_storage: DirectoryUploader | None = None,
 ) -> int:
-    """Run a command. `http` and `reader` let tests replace the network for planetary-ndvi."""
+    """Run a command with injectable HTTP and raster readers for offline tests."""
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.command == "nasa-power":
+        _check_power_args(parser, args)
     if args.command == "chirps":
         _check_chirps_args(parser, args)
     if args.command == "planetary-ndvi":
@@ -200,6 +244,25 @@ def main(
         frame = enso.read_enso(args.oni, args.roni)
         manifest = enso.write_clean(frame, args.out, oni_file=args.oni, roni_file=args.roni)
         sys.stdout.write(f"{len(frame)} rows -> {manifest}\n")
+    elif args.command == "nasa-power" and args.fetch is not None:
+        send = power_transport or nasa_power._download
+        with tempfile.TemporaryDirectory() as downloads:
+            try:
+                if args.fetch == "point":
+                    power_job: Connector = nasa_power.PowerPointConnector(
+                        args.lat, args.lon, args.start, args.end, Path(downloads), send
+                    )
+                else:
+                    west, south, east, north = args.bbox
+                    power_job = nasa_power.PowerRegionalConnector(
+                        south, north, west, east, args.start, args.end, Path(downloads), send
+                    )
+                manifest = run_job(power_job, args.raw, args.out)
+            except nasa_power.PowerError as error:
+                sys.stderr.write(f"ERROR: {error}\n")
+                return 2
+        rows = json.loads(manifest.read_text("utf-8"))["rows"]
+        sys.stdout.write(f"{rows} rows -> {manifest}\n")
     elif args.command == "nasa-power":
         frame = nasa_power.read_power(args.input)
         manifest = nasa_power.write_clean(frame, args.out, source_file=args.input)
@@ -254,8 +317,23 @@ def main(
         )
         for text in info["warnings"]:
             sys.stderr.write(f"WARNING: {text}\n")
+    elif args.command == "meteomatics-forecast":
+        api = meteomatics.MeteomaticsClient(
+            cache_dir=args.cache,
+            username=os.environ.get("METEOMATICS_USERNAME", ""),
+            password=os.environ.get("METEOMATICS_PASSWORD", ""),
+            daily_limit=args.daily_limit,
+        )
+        try:
+            frame = api.forecast(args.lat, args.lon, days=args.days)
+        except meteomatics.MeteomaticsError as error:
+            sys.stderr.write(f"ERROR: {error}\n")
+            return 2
+        manifest = meteomatics.write_clean(frame, args.out, api.last_response_file)
+        used = api.requests_today()
+        sys.stdout.write(f"{len(frame)} days -> {manifest} ({used} requests used today)\n")
     elif args.command == "chirps":
-        start, end = date.fromisoformat(args.start), date.fromisoformat(args.end)
+        start, end = args.start, args.end
         bbox = tuple(args.bbox)
         if args.gcs:
             raw_bucket = args.raw_bucket or os.environ.get("GCS_BUCKET_RAW")
@@ -292,7 +370,7 @@ def main(
 def _check_chirps_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     try:
         chirps._grid(tuple(args.bbox))
-        first, last = date.fromisoformat(args.start), date.fromisoformat(args.end)
+        first, last = args.start, args.end
         if first > last or first < date(1981, 1, 1):
             raise ValueError
         if args.gcs and (first.year, first.month) != (last.year, last.month):
