@@ -62,6 +62,17 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker "${{ secrets.GCP_REGION }}-docker.pkg.dev" --quiet
 
+      - name: Prepare verified maize-leaf model release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/maize-model"
+          gh release download maize-leaf-0.1.1 --repo "$GITHUB_REPOSITORY" \
+            --pattern maize-leaf-model-0.1.1.tar.gz --dir "$RUNNER_TEMP/maize-model"
+          python3 services/ml/deploy/prepare_model.py \
+            --archive "$RUNNER_TEMP/maize-model/maize-leaf-model-0.1.1.tar.gz" \
+            --out services/ml/runtime-models
+
       - name: Build and push ml-service image
         env:
           IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/ml-service:${{ github.sha }}
@@ -80,6 +91,7 @@ jobs:
             --project="${{ secrets.GCP_PROJECT_ID }}" \
             --region="${{ secrets.GCP_REGION }}" \
             --image="$IMAGE_URI" \
+            --update-env-vars="LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1" \
             --quiet
 
       - name: Check that ml-service is not public (staging)
@@ -155,6 +167,17 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker "${{ secrets.GCP_REGION }}-docker.pkg.dev" --quiet
 
+      - name: Prepare verified maize-leaf model release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/maize-model"
+          gh release download maize-leaf-0.1.1 --repo "$GITHUB_REPOSITORY" \
+            --pattern maize-leaf-model-0.1.1.tar.gz --dir "$RUNNER_TEMP/maize-model"
+          python3 services/ml/deploy/prepare_model.py \
+            --archive "$RUNNER_TEMP/maize-model/maize-leaf-model-0.1.1.tar.gz" \
+            --out services/ml/runtime-models
+
       - name: Ensure ml-service commit SHA image exists in Artifact Registry
         env:
           IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/ml-service:${{ github.sha }}
@@ -172,6 +195,7 @@ jobs:
             --project="${{ secrets.GCP_PROJECT_ID }}" \
             --region="${{ secrets.GCP_REGION }}" \
             --image="$IMAGE_URI" \
+            --update-env-vars="LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1" \
             --quiet
 
       - name: Check that ml-service is not public (production)

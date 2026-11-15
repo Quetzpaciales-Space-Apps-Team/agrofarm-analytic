@@ -12,7 +12,7 @@ AI coding assistants were used as tools to write and review code, tests, CI work
 |---|---|---|---|
 | Claude Code | `claude-fable-5-2` | `eldmark` | Repository rules, CI, scaffolds, connectors, tests, documentation, data analysis |
 | Codex | `gpt-6` | `jdivass` | Connector code, recorded-fixture tests, documentation, review |
-| OpenAI Codex | `GPT-6` | `eldmark` | Recording the owner's confirmation of crop-traits review, preserving source-verification limits, updating recommendation gap text and regression tests |
+| OpenAI Codex | `GPT-6` | `eldmark` | Maize-leaf dataset audit, CPU classifier, grouped evaluation, private image API, deployment checks and documentation; recording owner-confirmed crop-traits review while preserving source-verification limits |
 
 Team members who used another tool add a row here in their next pull request (rule G11.3).
 

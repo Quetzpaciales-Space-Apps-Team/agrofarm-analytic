@@ -12,6 +12,51 @@ tags:
   - name: simulation
   - name: rotations
 paths:
+  /v1/leaves/assess:
+    post:
+      tags: [leaf-health]
+      operationId: assessMaizeLeaf
+      summary: Screen a maize leaf photo for supported disease classes
+      description: >-
+        Upload JPEG or PNG image bytes (maximum 5 MiB and 16 million pixels).
+        A candidate classification is decision support, not a confirmed diagnosis.
+        Model scores are not calibrated probabilities. Generic insect damage does
+        not identify an insect species. Guidance requires local agronomy review.
+        Returns 503 until a trained artifact is configured with LEAF_MODEL_DIR.
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema: {type: string, format: binary}
+          image/png:
+            schema: {type: string, format: binary}
+      responses:
+        "200":
+          description: Candidate classes, uncertainty, review requirements and provenance
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [assessment, candidate, scores, score_interpretation, needs_local_review, guidance, limits, provenance]
+                properties:
+                  assessment: {enum: [possible_condition, uncertain]}
+                  candidate: {type: [string, "null"]}
+                  scores:
+                    type: object
+                    additionalProperties: {type: number, minimum: 0, maximum: 1}
+                  score_interpretation: {type: string}
+                  needs_local_review: {const: true}
+                  guidance: {type: object}
+                  limits: {type: array, items: {type: string}}
+                  provenance: {type: object}
+        "400":
+          description: Invalid, corrupt or unsupported image
+        "413":
+          description: Image exceeds the byte or decoded pixel limit
+        "415":
+          description: Only image/jpeg and image/png are accepted
+        "503":
+          description: No trained leaf classifier is configured
   /healthz:
     get:
       tags: [health]
