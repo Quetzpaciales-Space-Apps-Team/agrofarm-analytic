@@ -6,6 +6,7 @@ No image or fitted model is checked into git. Keep file groups together before s
 
 import argparse
 import hashlib
+import io
 import json
 import re
 import sys
@@ -18,6 +19,7 @@ from typing import Any
 import lightgbm as lgb
 import numpy as np
 from numpy.typing import NDArray
+from PIL import Image, ImageOps
 
 from agrofarm_ml.leaves.model import CLASSES, FEATURE_VERSION, LIMITS, image_features, image_group
 
@@ -40,6 +42,23 @@ def original_name(name: str) -> str:
     stem = Path(name).stem
     # The archive has augmented/enhanced copies. They must stay with their source image.
     return re.sub(r"(?:_aug\d+|_enhanced|_original)+$", "", stem, flags=re.IGNORECASE)
+
+
+def normalize_source_image(data: bytes) -> bytes:
+    """Downsample the known training archive; public upload bounds remain unchanged."""
+    if len(data) > 25 * 1024 * 1024:
+        raise ValueError("Training image exceeds 25 MiB")
+    with Image.open(io.BytesIO(data)) as image:
+        if image.width * image.height > 64_000_000:
+            raise ValueError("Training image exceeds 64 million pixels")
+        if image.format not in {"JPEG", "PNG"}:
+            raise ValueError("Training image must be JPEG or PNG")
+        image.draft("RGB", (1024, 1024))
+        rgb = ImageOps.exif_transpose(image).convert("RGB")
+        rgb.thumbnail((1024, 1024))
+        output = io.BytesIO()
+        rgb.save(output, format="JPEG", quality=90)
+    return output.getvalue()
 
 
 def split_for(group: str) -> str:
@@ -75,7 +94,9 @@ def train(archive: Path, out: Path) -> dict[str, Any]:
             raise ValueError(f"Unexpected class folders: {unknown}")
 
         def read(name: str) -> tuple[str, int, str, str, NDArray[np.float64]]:
-            data = bundle.read(name)
+            if bundle.getinfo(name).file_size > 25 * 1024 * 1024:
+                raise ValueError("Training image exceeds 25 MiB")
+            data = normalize_source_image(bundle.read(name))
             label = CLASSES.index(FOLDERS[Path(name).parts[0]])
             # Perceptual hashes also group identical/resized/flipped copies across names.
             return name, label, original_name(name), image_group(data), image_features(data)
@@ -153,6 +174,10 @@ def train(archive: Path, out: Path) -> dict[str, Any]:
         "status": "candidate_not_field_validated",
         "algorithm": "LightGBM over RGB spatial, HSV histogram and texture features",
         "classes": list(CLASSES),
+        "source_preprocessing": (
+            "EXIF orientation, at most 1024 pixels per side, JPEG quality 90; "
+            "public uploads retain the 5 MiB / 16 million pixel limit"
+        ),
         "feature_version": FEATURE_VERSION,
         "model_sha256": hashlib.sha256(model_file.read_bytes()).hexdigest(),
         "data_versions": {"mendeley": "10.17632/hmkd6nbngr.1", "archive_sha256": archive_hash},

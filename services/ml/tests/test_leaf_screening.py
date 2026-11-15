@@ -17,7 +17,14 @@ from agrofarm_ml.leaves.model import (
     image_features,
     image_group,
 )
-from agrofarm_ml.leaves.training import FOLDERS, metrics, original_name, split_for, train
+from agrofarm_ml.leaves.training import (
+    FOLDERS,
+    metrics,
+    normalize_source_image,
+    original_name,
+    split_for,
+    train,
+)
 from agrofarm_ml.main import create_app
 
 
@@ -141,9 +148,10 @@ def test_training_round_trip_keeps_augmentations_out_of_other_splits(tmp_path: P
     with zipfile.ZipFile(archive, "w") as bundle:
         for label, folder in enumerate(FOLDERS):
             for index in range(40):
-                pixels = np.clip(
-                    np.array(colors[label]) + rng.integers(-25, 25, (32, 32, 3)), 0, 255
-                ).astype(np.uint8)
+                # Spatial patches survive JPEG normalization and represent distinct leaves;
+                # pixel-level noise alone is deliberately collapsed by perceptual grouping.
+                texture = rng.integers(-25, 25, (8, 8, 1)).repeat(4, 0).repeat(4, 1)
+                pixels = np.clip(np.array(colors[label]) + texture, 0, 255).astype(np.uint8)
                 data = io.BytesIO()
                 Image.fromarray(pixels).save(data, format="PNG")
                 name = f"{folder}/class{label}_leaf{index}"
@@ -198,3 +206,16 @@ def test_invalid_model_scores_are_rejected(scores: list[float]) -> None:
     model = LeafModel(Scores(scores), {"model_version": "test-only"})
     with pytest.raises(ValueError, match="Invalid leaf model"):
         model.assess(image_bytes())
+
+
+def test_training_normalizes_large_source_images_without_relaxing_upload_limit() -> None:
+    rng = np.random.default_rng(2)
+    data = io.BytesIO()
+    Image.fromarray(rng.integers(0, 255, (1536, 1536, 3), dtype=np.uint8)).save(data, format="PNG")
+    raw = data.getvalue()
+    assert len(raw) > 5 * 1024 * 1024
+    with pytest.raises(OverflowError):
+        image_features(raw)
+    normalized = normalize_source_image(raw)
+    assert len(normalized) < 5 * 1024 * 1024
+    assert np.isfinite(image_features(normalized)).all()
