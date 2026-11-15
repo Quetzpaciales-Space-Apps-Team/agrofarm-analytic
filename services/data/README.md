@@ -67,6 +67,29 @@ permissions on the clean bucket; clean-bucket overwrite also needs object delete
 No service-account key is required. Local tests use the recorded window fixture and do not call
 CHIRPS or Google Cloud.
 
+## Rio Contreras rainfall (DS-015)
+
+The reviewed FUNCAGUA / Meteo Tech files are ingested offline, one source per run. Each source writes
+to a separate dataset; blank rainfall rows are omitted, and Zona 16 records for May and June 2025 are
+excluded. The raw input is preserved in the write-once raw store. Use the source name that matches
+the input file:
+
+```sh
+uv run python -m agrofarm_data rio-contreras --source funcagua-monthly \
+  --input <Serie_mensual_Rio_Contreras.xlsx> --raw-dir <raw-dir> --out <clean-dir>
+uv run python -m agrofarm_data rio-contreras --source cayala-daily \
+  --input <CIT_UVG_Cayala_serie_completa.xlsx> --raw-dir <raw-dir> --out <clean-dir>
+uv run python -m agrofarm_data rio-contreras --source zona16-daily \
+  --input <Zona16_CHIRPS_analisis.xlsx> --raw-dir <raw-dir> --out <clean-dir>
+uv run python -m agrofarm_data rio-contreras --source chirps-monthly \
+  --input <chirps3_precip_monthly_14.604_-90.490_serie.csv> --raw-dir <raw-dir> --out <clean-dir>
+```
+
+Attribute FUNCAGUA for its supplied files. The CHIRPS monthly dataset retains `value_center`, the
+series used by both comparison workbooks; `mean`, `min` and `max` are not ingested until their
+definitions are documented. The long monthly FUNCAGUA values are independent micro-watershed means,
+not monthly accumulations, and are not summed across months.
+
 ## Add a connector
 
 1. Write tests first, with a small recorded or synthetic fixture. CI never calls external APIs.
