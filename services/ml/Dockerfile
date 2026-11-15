@@ -20,6 +20,8 @@ RUN apt-get update && apt-get upgrade -y --no-install-recommends \
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
 COPY runtime-models/ /app/runtime-models/
+# The registry card of each model sits beside its files: <name>/<version>/registry_card.json
+COPY registry/ /app/runtime-models/
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PORT=8080
 USER 10001
 EXPOSE 8080

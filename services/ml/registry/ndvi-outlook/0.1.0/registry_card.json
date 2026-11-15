@@ -1,0 +1,53 @@
+{
+  "name": "ndvi-outlook",
+  "version": "0.1.0",
+  "model_version": "ndvi-vegetation-outlook-0.1.0",
+  "status": "limited_use_owner_accepted",
+  "purpose": "What-if outlook of cropland greenness under a rainfall, temperature and ENSO scenario, with a range.",
+  "label": "seasonal peak NDVI on cropland, as a percentage of the cell's own normal",
+  "training_data_versions": {
+    "table_sha256": "cc5e8df6bb74f6b32096fdf056c35829212cf1f9ef28be849852563edcaeda6c",
+    "enso_sha256": "63ca1f852ce732f9d690a6241b9953fb1d2ba83b1966f43f416a3cd4d4b6c3fb"
+  },
+  "features": [
+    "rain_anom_pct",
+    "rain_early_anom_pct",
+    "rain_late_anom_pct",
+    "temp_anom_c",
+    "roni_season",
+    "roni_pre_season",
+    "cropland_fraction",
+    "ndvi_normal",
+    "rain_normal_mm",
+    "temp_normal_c"
+  ],
+  "held_out_metrics": {
+    "split": "leave one whole year out",
+    "rule_fixed_before_training": "Leave one whole year out. The model works only if the pooled pinball loss is at least 5 % lower than climatology, the skill is positive in at least 60 % of the years, and it is positive in at least one El Nino year and one La Nina year.",
+    "pooled_skill": 0.0441,
+    "years": 25,
+    "rows": 24225,
+    "share_years_positive": 0.84,
+    "el_nino_years_positive": 3,
+    "la_nina_years_positive": 7,
+    "correlation_of_year_means": 0.127,
+    "coverage_p10_p90": 0.756,
+    "verdict": "no_skill_over_climatology"
+  },
+  "limits": [
+    "Predicts NDVI, not yield. NDVI says how green the cropland got, not how much it produced.",
+    "Experimental. It does not replace the fixed rules of /v1/simulate.",
+    "Cells of about 5 km mix many fields and crops. It says nothing about one parcel.",
+    "Rainfall of the same season is an input: this is a what-if tool, not a forecast.",
+    "Rows of one year share the weather. About 25 years means few independent samples.",
+    "Peak NDVI of dense vegetation saturates, so wet years are told apart poorly.",
+    "The cropland map is from 2021 and is used for every year.",
+    "Decision support only. A local agronomist must review any action taken from it."
+  ],
+  "training_period": {
+    "start": 2000,
+    "end": 2024
+  },
+  "acceptance": "The project owner accepted limited use on 2026-11-15 (ADR 0005). The skill rule fixed before training was not met: the verdict above stays as measured.",
+  "artifact_card": "serving_card.json"
+}

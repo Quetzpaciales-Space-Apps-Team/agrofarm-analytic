@@ -67,3 +67,11 @@ def test_cd_packages_a_checksum_pinned_leaf_artifact_before_building() -> None:
     assert "LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1" in raw
     dockerfile = (REPO_ROOT / "services/ml/Dockerfile").read_text()
     assert "COPY runtime-models/ /app/runtime-models/" in dockerfile
+
+
+def test_the_deploy_requires_both_models_and_ships_their_registry_cards() -> None:
+    raw = CD_WORKFLOW_PATH.read_text()
+    assert raw.count("REQUIRE_MODELS=maize-leaf/0.1.1;ndvi-outlook/0.1.0") == 2
+    # gcloud splits the variable list on commas, so the models are separated by semicolons
+    dockerfile = (REPO_ROOT / "services/ml/Dockerfile").read_text()
+    assert "COPY registry/ /app/runtime-models/" in dockerfile
