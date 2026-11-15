@@ -318,6 +318,10 @@ def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Pat
         else None
         for name in CLASSES.values()
     }
+    tiles = [
+        {"file": path.name, "checksum_sha256": _sha256(path)}
+        for path in select_tiles(raw_dir, grid)
+    ]
     west, south, east, north = bbox
     manifest = {
         "dataset": DATASET,
@@ -362,10 +366,8 @@ def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Pat
         "spatial_resolution": "10 m source, aggregated to 0.05 degree cells",
         "missing_value": "null fraction when the cell has no valid pixel",
         "limitations": LIMITATIONS,
-        "tiles": [
-            {"file": path.name, "checksum_sha256": _sha256(path)}
-            for path in select_tiles(raw_dir, grid)
-        ],
+        "tiles": tiles,
+        "source_checksum_sha256": {tile["file"]: tile["checksum_sha256"] for tile in tiles},
         "raster": {
             "file": raster_path.name,
             "content": "cropland fraction, float32, nodata NaN",

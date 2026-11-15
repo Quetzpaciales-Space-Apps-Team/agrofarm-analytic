@@ -20,6 +20,8 @@ DATASET = "enso_monthly"
 THRESHOLD_C = 0.5
 MISSING_BELOW = -90.0  # NOAA writes missing values as -99.9 style markers
 SEASONS = ["DJF", "JFM", "FMA", "MAM", "AMJ", "MJJ", "JJA", "JAS", "ASO", "SON", "OND", "NDJ"]
+SOURCE_VERSION = "NOAA CPC oni.ascii.txt and RONI.ascii.txt (no release number)"
+ATTRIBUTION = "NOAA Climate Prediction Center"
 COLUMNS = ["month", "oni", "roni", "phase", "phase_oni"]
 
 
@@ -74,7 +76,9 @@ def write_clean(frame: pd.DataFrame, out_dir: Path, oni_file: Path, roni_file: P
         "dataset": DATASET,
         "file": table_path.name,
         "source": "NOAA Climate Prediction Center: oni.ascii.txt and RONI.ascii.txt",
+        "source_version": SOURCE_VERSION,
         "license": "Public domain (US Government work). Attribution: NOAA CPC.",
+        "attribution": ATTRIBUTION,
         "rows": int(len(frame)),
         "date_range": {
             "start": frame["month"].min().date().isoformat(),

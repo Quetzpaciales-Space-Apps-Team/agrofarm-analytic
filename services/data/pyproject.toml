@@ -8,6 +8,7 @@ dependencies = [
     "pyarrow>=18",
     "openpyxl>=3.1",
     "rasterio>=1.5.2",
+    "jsonschema>=4.26.0",
 ]
 
 [dependency-groups]
@@ -19,6 +20,7 @@ dev = [
     "pip-audit>=2.7",
     "pandas-stubs>=2.2",
     "types-openpyxl>=3.1.5.20261017",
+    "types-jsonschema>=4.26.0.20261006",
 ]
 
 [build-system]

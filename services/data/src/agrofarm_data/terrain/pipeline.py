@@ -38,6 +38,11 @@ LICENSE = (
     "Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights "
     "reserved.' This wording is from memory of the ESA terms: confirm it before publication."
 )
+SOURCE_VERSION = "Copernicus DEM GLO-30 (tile release not recorded in the files)"
+ATTRIBUTION = (
+    "Produced using Copernicus WorldDEM-30 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and "
+    "Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA"
+)
 LIMITATIONS = [
     "The 30 m DEM is a surface model: it includes buildings, trees and crops, not bare earth, "
     "so slope is inflated on canopy edges and a flow path can follow a tree line.",
@@ -169,7 +174,9 @@ def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Pat
         "dataset": DATASET,
         "file": table_path.name,
         "source": "Copernicus DEM GLO-30 (ESA, Airbus), 1 arc second surface model",
+        "source_version": SOURCE_VERSION,
         "license": LICENSE,
+        "attribution": ATTRIBUTION,
         "license_verified": False,
         "license_note": "The tiles carry no license or attribution metadata; the notice above "
         "was not checked against the ESA terms.",
@@ -199,6 +206,7 @@ def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Pat
         "limitations": LIMITATIONS,
         "tiles": tile_entries,
         "layers": layer_entries,
+        "source_checksum_sha256": {tile["file"]: tile["sha256"] for tile in tile_entries},
         "checksum_sha256": _sha256(table_path),
         "processing_version": __version__,
     }
