@@ -77,6 +77,24 @@ def test_scale_traits_stay_inside_zero_to_one() -> None:
             assert 0.0 <= row["values"][trait] <= 1.0, (row["crop_id"], trait)
 
 
+@pytest.mark.parametrize("trait", SCALE_TRAITS)
+@pytest.mark.parametrize("value", [True, False, float("nan"), float("inf"), -float("inf")])
+def test_scale_traits_reject_booleans_and_nonfinite_numbers(trait: str, value: Any) -> None:
+    manifest, rows = raw()
+    rows[0]["values"][trait] = value
+    with pytest.raises(TraitsError, match=trait):
+        validate_table(manifest, rows)
+
+
+@pytest.mark.parametrize("trait", ["cycle_days", "kc_mid", "root_depth_m"])
+@pytest.mark.parametrize("value", [True, False, float("nan"), float("inf"), -float("inf")])
+def test_physical_traits_reject_booleans_and_nonfinite_numbers(trait: str, value: Any) -> None:
+    manifest, rows = raw()
+    rows[0]["values"][trait] = value
+    with pytest.raises(TraitsError, match=trait):
+        validate_table(manifest, rows)
+
+
 def test_aliases_resolve_to_the_crop_and_are_unique() -> None:
     table = load_traits()
 
