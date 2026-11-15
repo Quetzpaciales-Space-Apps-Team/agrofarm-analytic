@@ -1,4 +1,4 @@
-"""Experimental model: seasonal peak NDVI anomaly on cropland, validated one whole year at a time."""
+"""Experimental model: seasonal peak NDVI anomaly on cropland, one whole year held out."""
 
 import json
 from pathlib import Path
@@ -136,7 +136,9 @@ def test_every_year_is_predicted_by_a_model_that_never_saw_it() -> None:
 
 
 def test_a_real_signal_beats_climatology_and_noise_does_not() -> None:
-    phases = pd.Series({year: ("el_nino", "la_nina", "neutral")[i % 3] for i, year in enumerate(YEARS)})
+    phases = pd.Series(
+        {year: ("el_nino", "la_nina", "neutral")[i % 3] for i, year in enumerate(YEARS)}
+    )
 
     signal = leave_one_year_out(_table(effect=0.3), phases)
     noise = leave_one_year_out(_table(effect=0.0), phases)
@@ -162,7 +164,11 @@ def test_the_verdict_needs_every_condition() -> None:
 
 
 def test_training_cli_writes_a_model_and_a_card_that_says_what_it_is(tmp_path: Path) -> None:
-    table_path, enso_path, out = tmp_path / "table.parquet", tmp_path / "enso.parquet", tmp_path / "m"
+    table_path, enso_path, out = (
+        tmp_path / "table.parquet",
+        tmp_path / "enso.parquet",
+        tmp_path / "m",
+    )
     _table(effect=0.3).to_parquet(table_path, index=False)
     _enso().to_parquet(enso_path, index=False)
 
