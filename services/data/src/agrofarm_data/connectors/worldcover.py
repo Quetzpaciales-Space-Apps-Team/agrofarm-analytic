@@ -18,11 +18,13 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import rasterio
 from numpy.typing import NDArray
+from rasterio.features import geometry_mask
 from rasterio.transform import Affine, from_origin
 from rasterio.windows import Window
 
@@ -43,6 +45,10 @@ CROPLAND_CLASS = 40
 # pixels are class 40, and at least half of the cell has valid pixels. Both are inclusive.
 CROPLAND_THRESHOLD = 0.5
 MIN_VALID_FRACTION = 0.5
+# Team assumption, to be reviewed: a farm that declares cropland gets a warning when the product
+# shows less than this share of cropland inside its polygon (it under-counts small mixed fields).
+LOW_CROPLAND_FRACTION = 0.1
+MAX_POLYGON_DEGREES = 0.2  # a farm polygon is small; this keeps one window in memory
 
 CLASSES: dict[int, str] = {
     10: "tree_cover",
@@ -271,6 +277,26 @@ def _write_raster(path: Path, values: NDArray[np.float32], grid: Grid) -> None:
         out.write(values, 1)
 
 
+def _max_fraction(column: "pd.Series[float]") -> float | None:
+    return None if column.isna().all() else round(float(column.max()), 6)
+
+
+def _mask_warnings(table: pd.DataFrame, cropland_column: str) -> list[str]:
+    """An empty mask must never be read as "no cropland here"."""
+    if bool(table["cropland_mask"].any()):
+        return []
+    top = _max_fraction(table[cropland_column])
+    seen = (
+        "no cell has any cropland pixel" if not top else f"the largest cropland fraction is {top}"
+    )
+    return [
+        f"The cropland mask is empty: no cell reaches the threshold ({CROPLAND_THRESHOLD}); "
+        f"{seen}. An empty mask does not mean there is no cropland: a 0.05 degree cell is about "
+        f"5 km wide and small fields are diluted. Use the fraction columns, or the cover inside "
+        f"the farm polygon (worldcover-polygon), instead of the mask."
+    ]
+
+
 def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Path:
     """Write the table, the cropland fraction GeoTIFF and the manifest. Returns the manifest."""
     grid = grid_for(bbox)
@@ -328,6 +354,8 @@ def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Pat
         },
         "rows": int(len(table)),
         "cropland_cells": int(table["cropland_mask"].sum()),
+        "max_cropland_fraction": _max_fraction(table[cropland_column]),
+        "warnings": _mask_warnings(table, cropland_column),
         "cells_without_data": int((table["valid_pixels"] == 0).sum()),
         "class_share_of_valid_pixels": shares,
         "time_step": "static (2021 classification)",
@@ -349,3 +377,107 @@ def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Pat
     manifest_path = out_dir / f"{DATASET}.manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return manifest_path
+
+
+@dataclass(frozen=True)
+class PolygonCover:
+    """Share of each class among the valid 10 m pixels whose centre is inside a polygon."""
+
+    fractions: dict[str, float | None]
+    valid_pixels: int
+    total_pixels: int
+
+    @property
+    def valid_fraction(self) -> float:
+        return self.valid_pixels / self.total_pixels if self.total_pixels else 0.0
+
+
+def _polygon(geometry: dict[str, Any]) -> dict[str, Any]:
+    if geometry.get("type") == "Feature":
+        geometry = geometry["geometry"]
+    if geometry.get("type") not in ("Polygon", "MultiPolygon"):
+        raise WorldCoverError(
+            f"Expected a GeoJSON Polygon or MultiPolygon, got {geometry.get('type')}"
+        )
+    return geometry
+
+
+def _bounds(geometry: dict[str, Any]) -> Bbox:
+    def points(node: Any) -> list[tuple[float, float]]:
+        if node and isinstance(node[0], (int, float)):
+            return [(float(node[0]), float(node[1]))]
+        return [point for child in node for point in points(child)]
+
+    xs, ys = zip(*points(geometry["coordinates"]), strict=True)
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def polygon_cover(raw_dir: Path, geometry: dict[str, Any]) -> PolygonCover:
+    """Class shares inside a farm polygon, from the 10 m pixels (no 0.05 degree grid).
+
+    A pixel counts when its centre is inside the polygon. Each pixel belongs to one tile, so a
+    polygon that crosses a tile edge counts every pixel once.
+    """
+    geometry = _polygon(geometry)
+    west, south, east, north = _bounds(geometry)
+    if east - west > MAX_POLYGON_DEGREES or north - south > MAX_POLYGON_DEGREES:
+        raise WorldCoverError(
+            f"The polygon is too large for a farm (over {MAX_POLYGON_DEGREES} degrees)"
+        )
+    tiles: list[Path] = []
+    for path in sorted(raw_dir.glob("*_Map.tif")):
+        with rasterio.open(path) as source:
+            left, bottom, right, top = source.bounds
+        if west < right and east > left and south < top and north > bottom:
+            tiles.append(path)
+    if not tiles:
+        raise WorldCoverError(f"The polygon is outside every tile in {raw_dir}")
+
+    counts = np.zeros(_BUCKETS, dtype=np.int64)
+    inside_total = 0
+    for path in tiles:
+        with rasterio.open(path) as source:
+            t = source.transform
+            px, py = t.a, -t.e
+            cols = _pixel_range(t.c, px, west, east, source.width)
+            rows = range(
+                max(math.ceil(round((t.f - north) / py - 0.5, 6)), 0),
+                min(math.ceil(round((t.f - south) / py - 0.5, 6)), source.height),
+            )
+            if not rows or not cols:
+                continue
+            window = Window(cols.start, rows.start, len(cols), len(rows))
+            values = source.read(1, window=window)
+            outside = geometry_mask([geometry], out_shape=values.shape,
+                                    transform=source.window_transform(window))  # fmt: skip
+            bucket = _lookup(source.nodata)[values]
+            if (bucket[~outside] == _UNKNOWN_BUCKET).any():
+                raise WorldCoverError(f"{path.name}: not a land cover class")
+            inside_total += int((~outside).sum())
+            counts += np.bincount(bucket[~outside], minlength=_UNKNOWN_BUCKET + 1)[:_BUCKETS]
+    valid = int(counts[:_NODATA_BUCKET].sum())
+    fractions: dict[str, float | None] = {
+        name: (float(counts[bucket] / valid) if valid else None)
+        for bucket, name in enumerate(CLASSES.values())
+    }
+    return PolygonCover(fractions=fractions, valid_pixels=valid, total_pixels=inside_total)
+
+
+def check_declared_cropland(cover: PolygonCover, declared_cropland: bool) -> str | None:
+    """Warn when the farm says cropland and WorldCover disagrees. Never corrects the farmer."""
+    if not declared_cropland:
+        return None
+    share = cover.fractions["cropland"]
+    if share is None or cover.valid_fraction < MIN_VALID_FRACTION:
+        return (
+            "The farm declares cropland, but WorldCover 2021 has no data for most of the polygon "
+            "(built-up areas and water are masked), so there is nothing to compare."
+        )
+    if share < LOW_CROPLAND_FRACTION:
+        return (
+            f"The declared cropland does not match WorldCover 2021, which shows {share:.0%} "
+            f"cropland inside the polygon. The product under-counts small and mixed fields and "
+            f"is a 2021 classification: check a recent image. This is a data check and does not "
+            f"replace the farmer or the local agronomist."
+        )
+    return None

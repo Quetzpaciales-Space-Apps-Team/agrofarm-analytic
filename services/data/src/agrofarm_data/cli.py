@@ -65,6 +65,18 @@ def build_parser() -> argparse.ArgumentParser:
     cover.add_argument(
         "--area-name", required=True, help="Name of the area, written to the manifest"
     )
+
+    farm = commands.add_parser(
+        "worldcover-polygon", help="Land cover shares inside a farm polygon from 10 m pixels"
+    )
+    farm.add_argument(
+        "--input", type=Path, required=True, help="Folder with ESA_WorldCover_*_Map.tif tiles"
+    )
+    farm.add_argument("--polygon", type=Path, required=True, help="GeoJSON Polygon, EPSG:4326")
+    farm.add_argument("--out", type=Path, required=True, help="JSON file for the report")
+    farm.add_argument(
+        "--declared-cropland", action="store_true", help="The farm declares that it grows crops"
+    )
     return parser
 
 
@@ -92,4 +104,26 @@ def main(argv: Sequence[str] | None = None) -> int:
         sys.stdout.write(
             f"{info['rows']} cells, {info['cropland_cells']} in the cropland mask -> {manifest}\n"
         )
+        for text in info["warnings"]:
+            sys.stderr.write(f"WARNING: {text}\n")
+    elif args.command == "worldcover-polygon":
+        geometry = json.loads(args.polygon.read_text("utf-8"))
+        result = worldcover.polygon_cover(args.input, geometry)
+        message = worldcover.check_declared_cropland(result, args.declared_cropland)
+        report = {
+            "source": "ESA WorldCover 2021 v200 (10 m)",
+            "source_year": worldcover.SOURCE_YEAR,
+            "attribution": worldcover.ATTRIBUTION,
+            "fractions": result.fractions,
+            "valid_pixels": result.valid_pixels,
+            "valid_fraction": round(result.valid_fraction, 6),
+            "warnings": [message] if message else [],
+            "limitations": worldcover.LIMITATIONS,
+        }
+        args.out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        cropland = result.fractions["cropland"]
+        shown = "no data" if cropland is None else f"{cropland:.1%}"
+        sys.stdout.write(f"cropland {shown} of {result.valid_pixels} valid pixels -> {args.out}\n")
+        if message:
+            sys.stderr.write(f"WARNING: {message}\n")
     return 0
