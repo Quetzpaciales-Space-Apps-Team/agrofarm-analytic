@@ -1,0 +1,8 @@
+{
+  "tag": "maize-leaf-0.1.1",
+  "asset": "maize-leaf-model-0.1.1.tar.gz",
+  "archive_sha256": "52c293730cac56819e90874e1f0baec9de7d86c89e70433d4ba328030e12405e",
+  "model_version": "maize-leaf-lightgbm-0.1.1",
+  "feature_version": "rgb-hsv-texture-2",
+  "directory": "maize-leaf/0.1.1"
+}

@@ -19,3 +19,6 @@ data/clean/
 .requirements.audit.txt
 /data/
 .coverage
+.models-download/
+services/ml/runtime-models/*
+!services/ml/runtime-models/.gitkeep
