@@ -6,6 +6,7 @@ This module validates the schema and resolves crop names and aliases. It does no
 """
 
 import json
+import math
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib import resources
@@ -120,12 +121,17 @@ def _validate_values(crop: str, values: dict[str, Any]) -> None:
             raise TraitsError(f"{crop}: missing trait {trait}")
     for trait in SCALE_TRAITS:
         value = values[trait]
-        if not isinstance(value, int | float) or not 0.0 <= value <= 1.0:
+        if isinstance(value, bool) or not isinstance(value, int | float) or not 0.0 <= value <= 1.0:
             raise TraitsError(f"{crop}: {trait} must be a number from 0 to 1")
     for trait in NULLABLE_TRAITS:
         value = values[trait]
-        if value is not None and (not isinstance(value, int | float) or value <= 0):
-            raise TraitsError(f"{crop}: {trait} must be positive or null")
+        if value is not None and (
+            isinstance(value, bool)
+            or not isinstance(value, int | float)
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise TraitsError(f"{crop}: {trait} must be a finite positive number or null")
 
 
 def _validate_sources(
