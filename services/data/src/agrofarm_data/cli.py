@@ -14,6 +14,7 @@ from agrofarm_data import __version__
 from agrofarm_data.chirps_job import DirectoryUploader, run_chirps_job
 from agrofarm_data.connector import Connector, run_job
 from agrofarm_data.connectors import (
+    appeears,
     chirps,
     enso,
     insivumeh,
@@ -184,6 +185,31 @@ def build_parser() -> argparse.ArgumentParser:
     weather.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
     weather.add_argument("--daily-limit", type=int, default=meteomatics.DEFAULT_DAILY_LIMIT)
 
+    earth = commands.add_parser(
+        "appeears",
+        help="SMAP L4 soil moisture, MODIS or VIIRS vegetation for a box, through NASA AppEEARS",
+        description="Submits an AppEEARS task on the first run and exits with code 75 while it "
+        "runs; run the same command again to collect it. Needs EARTHDATA_USERNAME and "
+        "EARTHDATA_PASSWORD in the environment (AppEEARS does not accept the profile token).",
+    )
+    earth.add_argument("--source", choices=sorted(appeears.SPECS), required=True)
+    earth.add_argument(
+        "--bbox", type=float, nargs=4, required=True,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"), help="Area in EPSG:4326",
+    )  # fmt: skip
+    earth.add_argument("--start", required=True, help="YYYY-MM-DD")
+    earth.add_argument("--end", required=True, help="YYYY-MM-DD")
+    earth.add_argument("--raw-dir", type=Path, required=True, help="Write-once raw storage")
+    earth.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
+    earth.add_argument(
+        "--state-dir", type=Path, default=None, help="Task ids (default: <raw-dir>/appeears-state)"
+    )
+    earth.add_argument(
+        "--wait-seconds", type=float, default=0.0,
+        help="Keep polling for this long before exiting with 75 (default: do not wait)",
+    )  # fmt: skip
+    earth.add_argument("--poll-seconds", type=float, default=30.0)
+
     rain = commands.add_parser(
         "chirps", help="Read CHIRPS rainfall windows and write a monthly dataset"
     )
@@ -221,6 +247,15 @@ def _check_ndvi_args(parser: argparse.ArgumentParser, args: argparse.Namespace) 
         parser.error("--max-items must be at least 1")
 
 
+def _check_appeears_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    try:
+        appeears.build_request(
+            appeears.SPECS[args.source], tuple(args.bbox), args.start, args.end, "check"
+        )
+    except appeears.AppEearsError as error:
+        parser.error(str(error))
+
+
 def _check_power_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     if (args.input is None) == (args.fetch is None):
         parser.error("give exactly one of --input (a CSV) or --fetch (point or regional)")
@@ -242,6 +277,7 @@ def main(
     power_transport: nasa_power.Transport | None = None,
     chirps_window_reader: chirps.WindowReader | None = None,
     gcs_storage: DirectoryUploader | None = None,
+    appeears_transport: appeears.Transport | None = None,
 ) -> int:
     """Run a command with injectable HTTP and raster readers for offline tests."""
     parser = build_parser()
@@ -252,6 +288,8 @@ def main(
         _check_chirps_args(parser, args)
     if args.command == "planetary-ndvi":
         _check_ndvi_args(parser, args)
+    if args.command == "appeears":
+        _check_appeears_args(parser, args)
     if args.command == "insivumeh":
         frame = insivumeh.read_insivumeh(args.input)
         manifest = insivumeh.write_clean(frame, args.out, source_file=args.input)
@@ -338,6 +376,8 @@ def main(
         )
         for text in info["warnings"]:
             sys.stderr.write(f"WARNING: {text}\n")
+    elif args.command == "appeears":
+        return _run_appeears(args, appeears_transport)
     elif args.command == "meteomatics-forecast":
         api = meteomatics.MeteomaticsClient(
             cache_dir=args.cache,
@@ -385,6 +425,37 @@ def main(
             manifest = run_job(connector, raw_dir, args.out)
             info = json.loads(manifest.read_text("utf-8"))
             sys.stdout.write(f"{info['rows']} cells -> {manifest}\n")
+    return 0
+
+
+def _run_appeears(args: argparse.Namespace, transport: appeears.Transport | None) -> int:
+    """Exit codes: 0 collected, 75 the task is still running (run again), 2 an error."""
+    connector: appeears.AppEearsConnector | None = None
+    try:
+        username, password = appeears.credentials_from_env(os.environ)
+        api = transport or appeears.UrllibTransport()
+        token = appeears.login(api, username, password)
+        spec = appeears.SPECS[args.source]
+        bbox = (args.bbox[0], args.bbox[1], args.bbox[2], args.bbox[3])
+        connector = appeears.AppEearsConnector(
+            spec, bbox, args.start, args.end,
+            transport=api, token=token,
+            state_dir=args.state_dir or args.raw_dir / "appeears-state",
+            area_name=f"agrofarm-{spec.key}-{args.start}-{args.end}",
+            wait_seconds=args.wait_seconds, poll_seconds=args.poll_seconds,
+        )  # fmt: skip
+        manifest = run_job(connector, args.raw_dir, args.out)
+    except appeears.TaskPending as pending:
+        sys.stderr.write(f"{pending}\n")
+        return 75
+    except appeears.AppEearsError as error:
+        sys.stderr.write(f"ERROR: {error}\n")
+        return 2
+    finally:
+        if connector is not None:
+            connector.cleanup()
+    info = json.loads(manifest.read_text("utf-8"))
+    sys.stdout.write(f"{info['rows']} rows ({info['product']}) -> {manifest}\n")
     return 0
 
 

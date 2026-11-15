@@ -3,9 +3,11 @@
 Everything reads the answers recorded from the real API (`tests/fixtures/appeears/`)."""
 
 import hashlib
+import io
 import json
 import shutil
 import urllib.request
+from http.client import HTTPMessage
 from pathlib import Path
 from typing import Any
 
@@ -63,12 +65,16 @@ def connector(
         START,
         END,
         transport=transport or BundleTransport(),
-        token="session-token",
+        token="session-token",  # noqa: S106 -- a test value
         state_dir=tmp_path / "state",
         area_name="agrofarm-test",
         retrieved_at="2026-11-15",
         **extra,
     )
+
+
+def is_missing(value: Any) -> bool:
+    return bool(pd.isna(value))
 
 
 def spec_files(spec: SourceSpec) -> set[str]:
@@ -195,7 +201,11 @@ def cleaned(key: str, tmp_path: Path, **extra: Any) -> pd.DataFrame:
 
 def test_modis_rows_carry_the_statistics_and_flag_a_mostly_cloudy_composite(tmp_path: Path) -> None:
     table = cleaned("modis-13q1", tmp_path).set_index("date")
-    assert list(table.index.strftime("%Y-%m-%d")) == ["2025-05-25", "2025-06-10", "2025-06-26"]
+    assert [d.strftime("%Y-%m-%d") for d in table.index] == [
+        "2025-05-25",
+        "2025-06-10",
+        "2025-06-26",
+    ]
     cloudy = table.loc["2025-05-25"]  # 8,213 of 17,280 pixels are good or marginal
     assert cloudy["status"] == "too_cloudy"
     assert cloudy["usable_fraction"] == pytest.approx(8213 / 17280)
@@ -256,7 +266,7 @@ def test_a_day_with_too_few_samples_has_no_value(tmp_path: Path) -> None:
     table.drop(drop.index[:4]).to_csv(path, index=False)  # leaves 4 of 8 samples
     result = c.clean(files).set_index("date")
     assert result.loc["2025-06-03", "status"] == "too_few_samples"
-    assert pd.isna(result.loc["2025-06-03", "sm_surface_mean"])
+    assert is_missing(result.loc["2025-06-03", "sm_surface_mean"])
     assert result.loc["2025-06-03", "samples_surface"] == 4
     assert result.loc["2025-06-02", "status"] == "ok"
 
@@ -285,7 +295,7 @@ def test_an_empty_statistics_file_is_an_error_not_an_empty_table(tmp_path: Path)
         c.clean(files)
 
 
-# --- manifest and job ------------------------------------------------------------------------------
+# --- manifest and job ------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("key", sorted(SPECS))
@@ -340,7 +350,7 @@ def _redirect(handler: StripAuthorizationOnRedirect, to: str) -> urllib.request.
         "https://appeears.earthdatacloud.nasa.gov/api/bundle/x/y",
         headers={"Authorization": "Bearer session-token", "User-Agent": "test"},
     )
-    return handler.redirect_request(request, None, 302, "Found", {}, to)  # type: ignore[arg-type]
+    return handler.redirect_request(request, io.BytesIO(), 302, "Found", HTTPMessage(), to)
 
 
 def test_the_token_is_not_forwarded_to_another_host_on_a_redirect() -> None:
