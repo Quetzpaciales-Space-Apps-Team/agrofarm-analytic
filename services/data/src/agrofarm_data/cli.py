@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import sys
 from collections.abc import Sequence
 from datetime import date
@@ -11,6 +12,7 @@ from agrofarm_data import __version__
 from agrofarm_data.connectors import (
     enso,
     insivumeh,
+    meteomatics,
     nasa_power,
     planetary_computer,
     soilgrids,
@@ -136,6 +138,17 @@ def build_parser() -> argparse.ArgumentParser:
     ndvi.add_argument(
         "--raw-dir", type=Path, default=None, help="Raw store folder (default: <out>/raw)"
     )
+
+    weather = commands.add_parser(
+        "meteomatics-forecast",
+        help="Daily point forecast from Meteomatics (cached, with a daily request budget)",
+    )
+    weather.add_argument("--lat", type=float, required=True)
+    weather.add_argument("--lon", type=float, required=True)
+    weather.add_argument("--days", type=int, default=7)
+    weather.add_argument("--cache", type=Path, required=True, help="Cache and budget directory")
+    weather.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
+    weather.add_argument("--daily-limit", type=int, default=meteomatics.DEFAULT_DAILY_LIMIT)
     return parser
 
 
@@ -228,4 +241,19 @@ def main(
         )
         for text in info["warnings"]:
             sys.stderr.write(f"WARNING: {text}\n")
+    elif args.command == "meteomatics-forecast":
+        api = meteomatics.MeteomaticsClient(
+            cache_dir=args.cache,
+            username=os.environ.get("METEOMATICS_USERNAME", ""),
+            password=os.environ.get("METEOMATICS_PASSWORD", ""),
+            daily_limit=args.daily_limit,
+        )
+        try:
+            frame = api.forecast(args.lat, args.lon, days=args.days)
+        except meteomatics.MeteomaticsError as error:
+            sys.stderr.write(f"ERROR: {error}\n")
+            return 2
+        manifest = meteomatics.write_clean(frame, args.out, api.last_response_file)
+        used = api.requests_today()
+        sys.stdout.write(f"{len(frame)} days -> {manifest} ({used} requests used today)\n")
     return 0

@@ -184,7 +184,9 @@ def test_clean_output_has_a_valid_manifest_that_says_it_is_a_forecast(tmp_path: 
     assert manifest["rows"] == 7
     assert manifest["retrieved_at"] == "2026-11-15"
     assert manifest["date_range"] == {"start": "2026-11-15", "end": "2026-11-21"}
-    assert any("forecast" in text and "not an observation" in text for text in manifest["limitations"])
+    assert any(
+        "forecast" in text and "not an observation" in text for text in manifest["limitations"]
+    )
     assert "team-secret" not in manifest_path.read_text("utf-8")
 
 
