@@ -60,6 +60,9 @@ Rules that matter when reading the tables:
 - **The statistics include cloudy pixels.** A vegetation composite has values only when at least half of its
   pixels are in a usable reliability class (MODIS 0 and 1, VIIRS 0, 1 and 2); otherwise the values are null and
   `status` is `too_cloudy`. A SMAP day has a value only with 6 of its 8 samples. The manifest records the rule.
+  In the rainy season this can leave a whole month empty: all six VIIRS composites of June 2025 for the
+  reference box had between 1 and 49 percent usable pixels. `--min-usable-fraction` lowers the share (the
+  manifest records the value used); the dates it keeps are noisier.
 - Only polygon statistics are kept (a `*-Statistics.csv` of the bundle), not the per-date rasters, and the
   polygon is a box, not a farm.
 - Each downloaded file is checked against the SHA-256 in the bundle listing. The bundle's `*-request.json`

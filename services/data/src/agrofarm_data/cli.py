@@ -209,6 +209,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Keep polling for this long before exiting with 75 (default: do not wait)",
     )  # fmt: skip
     earth.add_argument("--poll-seconds", type=float, default=30.0)
+    earth.add_argument(
+        "--min-usable-fraction", type=float, default=appeears.MIN_USABLE_FRACTION,
+        help="Vegetation only: share of usable pixels a composite needs to keep its values "
+        "(default 0.5; in the rainy season a lower value keeps more, noisier dates)",
+    )  # fmt: skip
 
     rain = commands.add_parser(
         "chirps", help="Read CHIRPS rainfall windows and write a monthly dataset"
@@ -254,6 +259,8 @@ def _check_appeears_args(parser: argparse.ArgumentParser, args: argparse.Namespa
         )
     except appeears.AppEearsError as error:
         parser.error(str(error))
+    if not 0 < args.min_usable_fraction <= 1:
+        parser.error("--min-usable-fraction must be above 0 and at most 1")
 
 
 def _check_power_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
@@ -443,6 +450,7 @@ def _run_appeears(args: argparse.Namespace, transport: appeears.Transport | None
             state_dir=args.state_dir or args.raw_dir / "appeears-state",
             area_name=f"agrofarm-{spec.key}-{args.start}-{args.end}",
             wait_seconds=args.wait_seconds, poll_seconds=args.poll_seconds,
+            min_usable_fraction=args.min_usable_fraction,
         )  # fmt: skip
         manifest = run_job(connector, args.raw_dir, args.out)
     except appeears.TaskPending as pending:
