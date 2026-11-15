@@ -1,0 +1,19 @@
+Written 2026-11-15 before any model was fit.
+The NDVI model "works" only if, under leave-one-year-out validation (every year predicted by a
+model that never saw it):
+  1. pooled mean pinball loss (p10, p50, p90) is at least 5 % lower than the climatology benchmark, and
+  2. the per-year skill is positive in at least 60 % of the years, and
+  3. it is positive in at least one El Nino year and at least one La Nina year.
+Otherwise the verdict is no_skill_over_climatology and the next label is tried.
+
+GDHY maize yield (second label), written 2026-11-15 before any GDHY model was fit.
+Same three conditions. Target: yield anomaly in % against each cell's own linear trend, the trend
+fitted without the held-out year. Because the table is small (about 0.5 degree cells, 1995-2016),
+the LightGBM settings are fixed here in advance: num_leaves 4, min_data_in_leaf 20, 150 rounds,
+learning rate 0.05. They are not tuned afterwards.
+
+GGCP10 maize production (third label), written 2026-11-15 before any GGCP10 model was fit.
+Same three conditions. 2010-2020 only (11 years), so: target is the production anomaly in %
+against each cell's own mean of the training years (no trend, the series is too short), cells
+need at least 8 training years and production above zero in every year. LightGBM settings fixed
+in advance: num_leaves 4, min_data_in_leaf 20, 150 rounds, learning rate 0.05.

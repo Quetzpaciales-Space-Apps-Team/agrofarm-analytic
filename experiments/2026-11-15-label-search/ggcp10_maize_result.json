@@ -1,0 +1,112 @@
+{
+  "pooled_skill": -0.0205,
+  "years": 11,
+  "rows": 21164,
+  "share_years_positive": 0.364,
+  "el_nino_years_positive": 0,
+  "la_nina_years_positive": 2,
+  "correlation_of_year_means": -0.656,
+  "coverage_p10_p90": 0.668,
+  "per_year": [
+    {
+      "year": 2010,
+      "phase": "la_nina",
+      "rows": 1924,
+      "skill": -0.102,
+      "mean_actual_pct": -5.93,
+      "mean_p50_pct": 5.98,
+      "coverage": 0.563
+    },
+    {
+      "year": 2011,
+      "phase": "la_nina",
+      "rows": 1924,
+      "skill": -0.068,
+      "mean_actual_pct": -10.46,
+      "mean_p50_pct": 1.82,
+      "coverage": 0.629
+    },
+    {
+      "year": 2012,
+      "phase": "neutral",
+      "rows": 1924,
+      "skill": -0.021,
+      "mean_actual_pct": -5.59,
+      "mean_p50_pct": 2.16,
+      "coverage": 0.719
+    },
+    {
+      "year": 2013,
+      "phase": "neutral",
+      "rows": 1924,
+      "skill": -0.03,
+      "mean_actual_pct": -3.86,
+      "mean_p50_pct": 3.59,
+      "coverage": 0.744
+    },
+    {
+      "year": 2014,
+      "phase": "neutral",
+      "rows": 1924,
+      "skill": -0.013,
+      "mean_actual_pct": -3.38,
+      "mean_p50_pct": 3.5,
+      "coverage": 0.753
+    },
+    {
+      "year": 2015,
+      "phase": "el_nino",
+      "rows": 1924,
+      "skill": -0.003,
+      "mean_actual_pct": -5.46,
+      "mean_p50_pct": -1.12,
+      "coverage": 0.561
+    },
+    {
+      "year": 2016,
+      "phase": "la_nina",
+      "rows": 1924,
+      "skill": 0.055,
+      "mean_actual_pct": 3.67,
+      "mean_p50_pct": 0.97,
+      "coverage": 0.884
+    },
+    {
+      "year": 2017,
+      "phase": "neutral",
+      "rows": 1924,
+      "skill": 0.024,
+      "mean_actual_pct": 12.54,
+      "mean_p50_pct": -1.66,
+      "coverage": 0.631
+    },
+    {
+      "year": 2018,
+      "phase": "neutral",
+      "rows": 1924,
+      "skill": -0.159,
+      "mean_actual_pct": 10.16,
+      "mean_p50_pct": -7.54,
+      "coverage": 0.532
+    },
+    {
+      "year": 2019,
+      "phase": "neutral",
+      "rows": 1924,
+      "skill": 0.03,
+      "mean_actual_pct": 2.29,
+      "mean_p50_pct": -2.29,
+      "coverage": 0.707
+    },
+    {
+      "year": 2020,
+      "phase": "la_nina",
+      "rows": 1924,
+      "skill": 0.067,
+      "mean_actual_pct": 13.06,
+      "mean_p50_pct": -0.74,
+      "coverage": 0.621
+    }
+  ],
+  "verdict": "no_skill_over_climatology"
+}

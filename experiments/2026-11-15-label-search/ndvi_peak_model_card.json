@@ -1,0 +1,289 @@
+{
+  "model_version": "ndvi-peak-experimental-0.1.0",
+  "status": "experimental",
+  "purpose": "What-if outlook of cropland greenness under a rainfall, temperature and ENSO scenario, with a range.",
+  "target": "seasonal peak NDVI on cropland, as a percentage of the cell's own normal",
+  "algorithm": "LightGBM gradient boosting, one quantile model per quantile",
+  "quantiles": [
+    0.1,
+    0.5,
+    0.9
+  ],
+  "features": [
+    "rain_anom_pct",
+    "rain_early_anom_pct",
+    "rain_late_anom_pct",
+    "temp_anom_c",
+    "roni_season",
+    "roni_pre_season",
+    "cropland_fraction",
+    "ndvi_normal",
+    "rain_normal_mm",
+    "temp_normal_c"
+  ],
+  "seed": 0,
+  "training_period": {
+    "start": 2000,
+    "end": 2024
+  },
+  "training_rows": 24225,
+  "training_cells": 969,
+  "validation": {
+    "split": "leave one whole year out",
+    "benchmark": "climatology: the quantiles of the training anomalies for every row",
+    "rule": "Leave one whole year out. The model works only if the pooled pinball loss is at least 5 % lower than climatology, the skill is positive in at least 60 % of the years, and it is positive in at least one El Nino year and one La Nina year.",
+    "note": "Cell normals are computed without the held-out year. The saved model is refit on all years."
+  },
+  "metrics": {
+    "pooled_skill": 0.0441,
+    "years": 25,
+    "rows": 24225,
+    "share_years_positive": 0.84,
+    "el_nino_years_positive": 3,
+    "la_nina_years_positive": 7,
+    "correlation_of_year_means": 0.127,
+    "coverage_p10_p90": 0.756,
+    "per_year": [
+      {
+        "year": 2000,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.067,
+        "mean_actual_pct": 0.2,
+        "mean_p50_pct": -0.26,
+        "coverage_p10_p90": 0.765
+      },
+      {
+        "year": 2001,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.038,
+        "mean_actual_pct": 0.13,
+        "mean_p50_pct": -0.28,
+        "coverage_p10_p90": 0.693
+      },
+      {
+        "year": 2002,
+        "phase": "el_nino",
+        "rows": 969,
+        "skill": 0.051,
+        "mean_actual_pct": 0.9,
+        "mean_p50_pct": 0.22,
+        "coverage_p10_p90": 0.718
+      },
+      {
+        "year": 2003,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.089,
+        "mean_actual_pct": 0.79,
+        "mean_p50_pct": 0.25,
+        "coverage_p10_p90": 0.747
+      },
+      {
+        "year": 2004,
+        "phase": "el_nino",
+        "rows": 969,
+        "skill": 0.045,
+        "mean_actual_pct": 0.19,
+        "mean_p50_pct": -0.01,
+        "coverage_p10_p90": 0.787
+      },
+      {
+        "year": 2005,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.088,
+        "mean_actual_pct": 0.36,
+        "mean_p50_pct": 0.19,
+        "coverage_p10_p90": 0.822
+      },
+      {
+        "year": 2006,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.043,
+        "mean_actual_pct": 0.47,
+        "mean_p50_pct": -0.12,
+        "coverage_p10_p90": 0.795
+      },
+      {
+        "year": 2007,
+        "phase": "la_nina",
+        "rows": 969,
+        "skill": 0.006,
+        "mean_actual_pct": 0.31,
+        "mean_p50_pct": -0.62,
+        "coverage_p10_p90": 0.792
+      },
+      {
+        "year": 2008,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.056,
+        "mean_actual_pct": -0.06,
+        "mean_p50_pct": -0.02,
+        "coverage_p10_p90": 0.741
+      },
+      {
+        "year": 2009,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.062,
+        "mean_actual_pct": -0.42,
+        "mean_p50_pct": -0.27,
+        "coverage_p10_p90": 0.76
+      },
+      {
+        "year": 2010,
+        "phase": "la_nina",
+        "rows": 969,
+        "skill": 0.093,
+        "mean_actual_pct": -0.95,
+        "mean_p50_pct": -0.28,
+        "coverage_p10_p90": 0.716
+      },
+      {
+        "year": 2011,
+        "phase": "la_nina",
+        "rows": 969,
+        "skill": -0.026,
+        "mean_actual_pct": -0.24,
+        "mean_p50_pct": 0.25,
+        "coverage_p10_p90": 0.785
+      },
+      {
+        "year": 2012,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.044,
+        "mean_actual_pct": 0.0,
+        "mean_p50_pct": -0.15,
+        "coverage_p10_p90": 0.816
+      },
+      {
+        "year": 2013,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.047,
+        "mean_actual_pct": 0.03,
+        "mean_p50_pct": 0.25,
+        "coverage_p10_p90": 0.784
+      },
+      {
+        "year": 2014,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": -0.019,
+        "mean_actual_pct": -1.85,
+        "mean_p50_pct": 0.18,
+        "coverage_p10_p90": 0.594
+      },
+      {
+        "year": 2015,
+        "phase": "el_nino",
+        "rows": 969,
+        "skill": 0.042,
+        "mean_actual_pct": 0.17,
+        "mean_p50_pct": -0.16,
+        "coverage_p10_p90": 0.741
+      },
+      {
+        "year": 2016,
+        "phase": "la_nina",
+        "rows": 969,
+        "skill": 0.044,
+        "mean_actual_pct": -0.16,
+        "mean_p50_pct": 0.17,
+        "coverage_p10_p90": 0.85
+      },
+      {
+        "year": 2017,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": -0.005,
+        "mean_actual_pct": 0.35,
+        "mean_p50_pct": -0.12,
+        "coverage_p10_p90": 0.796
+      },
+      {
+        "year": 2018,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.119,
+        "mean_actual_pct": -0.89,
+        "mean_p50_pct": -0.34,
+        "coverage_p10_p90": 0.741
+      },
+      {
+        "year": 2019,
+        "phase": "neutral",
+        "rows": 969,
+        "skill": 0.095,
+        "mean_actual_pct": -0.69,
+        "mean_p50_pct": 0.26,
+        "coverage_p10_p90": 0.725
+      },
+      {
+        "year": 2020,
+        "phase": "la_nina",
+        "rows": 969,
+        "skill": 0.072,
+        "mean_actual_pct": 0.67,
+        "mean_p50_pct": 0.63,
+        "coverage_p10_p90": 0.802
+      },
+      {
+        "year": 2021,
+        "phase": "la_nina",
+        "rows": 969,
+        "skill": 0.019,
+        "mean_actual_pct": 0.41,
+        "mean_p50_pct": 0.07,
+        "coverage_p10_p90": 0.741
+      },
+      {
+        "year": 2022,
+        "phase": "la_nina",
+        "rows": 969,
+        "skill": 0.003,
+        "mean_actual_pct": -0.21,
+        "mean_p50_pct": 0.25,
+        "coverage_p10_p90": 0.683
+      },
+      {
+        "year": 2023,
+        "phase": "el_nino",
+        "rows": 969,
+        "skill": -0.022,
+        "mean_actual_pct": 0.06,
+        "mean_p50_pct": 1.17,
+        "coverage_p10_p90": 0.8
+      },
+      {
+        "year": 2024,
+        "phase": "la_nina",
+        "rows": 969,
+        "skill": 0.022,
+        "mean_actual_pct": 0.54,
+        "mean_p50_pct": 0.1,
+        "coverage_p10_p90": 0.718
+      }
+    ]
+  },
+  "verdict": "no_skill_over_climatology",
+  "data_versions": {
+    "table_sha256": "cc5e8df6bb74f6b32096fdf056c35829212cf1f9ef28be849852563edcaeda6c",
+    "enso_sha256": "63ca1f852ce732f9d690a6241b9953fb1d2ba83b1966f43f416a3cd4d4b6c3fb"
+  },
+  "limits": [
+    "Predicts NDVI, not yield. NDVI says how green the cropland got, not how much it produced.",
+    "Experimental. It does not replace the fixed rules of /v1/simulate.",
+    "Cells of about 5 km mix many fields and crops. It says nothing about one parcel.",
+    "Rainfall of the same season is an input: this is a what-if tool, not a forecast.",
+    "Rows of one year share the weather. About 25 years means few independent samples.",
+    "Peak NDVI of dense vegetation saturates, so wet years are told apart poorly.",
+    "The cropland map is from 2021 and is used for every year.",
+    "Decision support only. A local agronomist must review any action taken from it."
+  ]
+}
