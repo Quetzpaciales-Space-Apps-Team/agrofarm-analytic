@@ -8,6 +8,7 @@ from pathlib import Path
 
 from agrofarm_data import __version__
 from agrofarm_data.connectors import enso, insivumeh, nasa_power, soilgrids, worldcover
+from agrofarm_data.terrain import pipeline as terrain
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -77,6 +78,23 @@ def build_parser() -> argparse.ArgumentParser:
     farm.add_argument(
         "--declared-cropland", action="store_true", help="The farm declares that it grows crops"
     )
+
+    relief = commands.add_parser(
+        "terrain", help="Slope, aspect, flow accumulation and risk zones from Copernicus DEM tiles"
+    )
+    relief.add_argument("--input", type=Path, required=True, help="Folder with the DEM .tif tiles")
+    relief.add_argument("--out", type=Path, required=True, help="Directory for the dataset")
+    relief.add_argument(
+        "--bbox",
+        type=float,
+        nargs=4,
+        required=True,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="Area in EPSG:4326",
+    )
+    relief.add_argument(
+        "--area-name", required=True, help="Name of the area, written to the manifest"
+    )
     return parser
 
 
@@ -126,4 +144,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         sys.stdout.write(f"cropland {shown} of {result.valid_pixels} valid pixels -> {args.out}\n")
         if message:
             sys.stderr.write(f"WARNING: {message}\n")
+    elif args.command == "terrain":
+        manifest = terrain.write_clean(args.input, args.out, tuple(args.bbox), args.area_name)
+        count = len(json.loads(manifest.read_text("utf-8"))["layers"])
+        sys.stdout.write(f"{count} layers -> {manifest}\n")
     return 0
