@@ -18,8 +18,11 @@ from agrofarm_data.connectors.worldcover import (
     CROPLAND_CLASS,
     CROPLAND_THRESHOLD,
     MIN_VALID_FRACTION,
+    LOW_CROPLAND_FRACTION,
     WorldCoverError,
     aggregate,
+    check_declared_cropland,
+    polygon_cover,
     write_clean,
 )
 
@@ -291,3 +294,146 @@ def test_command_line_writes_the_clean_dataset(
     printed = capsys.readouterr().out
     assert "100 cells" in printed
     assert "2 in the cropland mask" in printed
+
+
+# ---- an empty mask is reported, never silent -------------------------------------------
+
+
+@pytest.fixture
+def grass_only(tmp_path: Path) -> Path:
+    folder = tmp_path / "grass"
+    folder.mkdir()
+    data = blank()
+    paint(data, 0, 0, {40: 20, GRASS: 80})  # some cropland, far below the threshold
+    write_tile(folder / "ESA_WorldCover_10m_2021_v200_N14W091_Map.tif", data, -91.0, 15.0)
+    return folder
+
+
+def test_empty_mask_is_flagged_in_the_manifest_with_the_largest_fraction(
+    grass_only: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "clean"
+    manifest = json.loads(write_clean(grass_only, out, BOX, "grass").read_text("utf-8"))
+    assert manifest["cropland_cells"] == 0
+    assert manifest["max_cropland_fraction"] == pytest.approx(0.20)
+    (warning,) = manifest["warnings"]
+    assert "empty" in warning
+    assert "does not mean" in warning
+    assert "fraction" in warning
+
+
+def test_nonempty_mask_has_no_warning(tiles: Path, tmp_path: Path) -> None:
+    out = tmp_path / "clean"
+    manifest = json.loads(write_clean(tiles, out, BOX, "ok").read_text("utf-8"))
+    assert manifest["cropland_cells"] > 0
+    assert manifest["warnings"] == []
+
+
+def test_command_line_prints_the_empty_mask_warning(
+    grass_only: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    args = ["worldcover", "--input", str(grass_only), "--out", str(tmp_path / "o"), "--bbox",
+            "-91.0", "14.5", "-90.5", "15.0", "--area-name", "grass"]  # fmt: skip
+    assert main(args) == 0
+    assert "WARNING" in capsys.readouterr().err
+
+
+# ---- cover inside the polygon of a farm --------------------------------------------------
+
+
+def square(west: float, south: float, east: float, north: float) -> dict[str, object]:
+    ring = [[west, south], [east, south], [east, north], [west, north], [west, south]]
+    return {"type": "Polygon", "coordinates": [ring]}
+
+
+def test_polygon_cover_counts_the_pixels_inside_the_polygon(tiles: Path) -> None:
+    # the first three pixel rows of cell (0, 0) are all cropland: 30 pixels
+    cover = polygon_cover(tiles, square(-91.0, 14.985, -90.95, 15.0))
+    assert cover.valid_pixels == 30
+    assert cover.fractions["cropland"] == pytest.approx(1.0)
+    assert cover.valid_fraction == pytest.approx(1.0)
+
+
+def test_polygon_over_a_whole_cell_matches_the_cell_fractions(tiles: Path) -> None:
+    cover = polygon_cover(tiles, square(-91.0, 14.95, -90.95, 15.0))
+    assert cover.fractions["cropland"] == pytest.approx(0.30)
+    assert cover.fractions["tree_cover"] == pytest.approx(0.20)
+    assert cover.fractions["grassland"] == pytest.approx(0.50)
+
+
+def test_polygon_over_no_data_gives_null_cropland(tiles: Path) -> None:
+    cover = polygon_cover(tiles, square(-90.9, 14.95, -90.85, 15.0))
+    assert cover.valid_pixels == 0
+    assert cover.valid_fraction == 0
+    assert cover.fractions["cropland"] is None
+
+
+def test_polygon_crossing_two_tiles_counts_every_pixel_once(tmp_path: Path) -> None:
+    folder = tmp_path / "two"
+    folder.mkdir()
+    write_tile(folder / "a_Map.tif", blank(), -91.0, 15.0)
+    write_tile(folder / "b_Map.tif", blank(value=40), -90.5, 15.0)
+    cover = polygon_cover(folder, square(-90.55, 14.9, -90.45, 14.95))
+    assert cover.valid_pixels == 10 * 20
+    assert cover.fractions["cropland"] == pytest.approx(0.5)
+
+
+def test_polygon_accepts_a_feature_and_a_multipolygon(tiles: Path) -> None:
+    whole = square(-91.0, 14.95, -90.95, 15.0)
+    feature = {"type": "Feature", "properties": {}, "geometry": whole}
+    multi = {"type": "MultiPolygon", "coordinates": [whole["coordinates"]]}
+    assert polygon_cover(tiles, feature).valid_pixels == 100
+    assert polygon_cover(tiles, multi).valid_pixels == 100
+
+
+@pytest.mark.parametrize(
+    ("geometry", "message"),
+    [
+        ({"type": "Point", "coordinates": [-90.9, 14.9]}, "Polygon"),
+        (square(10.0, 10.0, 10.1, 10.1), "outside"),
+        (square(-91.0, 14.5, -90.0, 15.5), "too large"),
+    ],
+    ids=["point", "outside_tiles", "huge"],
+)
+def test_bad_polygons_are_rejected(tiles: Path, geometry: dict[str, object], message: str) -> None:
+    with pytest.raises(WorldCoverError, match=message):
+        polygon_cover(tiles, geometry)
+
+
+def test_declared_cropland_that_the_product_does_not_see_gets_a_warning(tiles: Path) -> None:
+    cover = polygon_cover(tiles, square(-90.65, 14.5, -90.6, 14.55))  # all grassland
+    message = check_declared_cropland(cover, declared_cropland=True)
+    assert message is not None
+    assert "does not match" in message
+    assert "does not replace the farmer" in message
+
+
+def test_matching_or_undeclared_cropland_gets_no_warning(tiles: Path) -> None:
+    crop = polygon_cover(tiles, square(-91.0, 14.985, -90.95, 15.0))
+    grass = polygon_cover(tiles, square(-90.65, 14.5, -90.6, 14.55))
+    assert check_declared_cropland(crop, declared_cropland=True) is None
+    assert check_declared_cropland(grass, declared_cropland=False) is None
+    assert LOW_CROPLAND_FRACTION < 0.5  # the polygon check is more lenient than the cell mask
+
+
+def test_declared_cropland_over_no_data_says_there_is_nothing_to_compare(tiles: Path) -> None:
+    cover = polygon_cover(tiles, square(-90.9, 14.95, -90.85, 15.0))
+    message = check_declared_cropland(cover, declared_cropland=True)
+    assert message is not None
+    assert "no data" in message
+
+
+def test_command_line_reports_the_polygon_cover(
+    tiles: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    geojson = tmp_path / "farm.geojson"
+    geojson.write_text(json.dumps(square(-90.65, 14.5, -90.6, 14.55)), encoding="utf-8")
+    out = tmp_path / "cover.json"
+    args = ["worldcover-polygon", "--input", str(tiles), "--polygon", str(geojson),
+            "--out", str(out), "--declared-cropland"]  # fmt: skip
+    assert main(args) == 0
+    report = json.loads(out.read_text("utf-8"))
+    assert report["fractions"]["grassland"] == pytest.approx(1.0)
+    assert report["source_year"] == 2021
+    assert "does not match" in report["warnings"][0]
+    assert "WARNING" in capsys.readouterr().err
