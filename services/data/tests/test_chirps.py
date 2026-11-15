@@ -115,3 +115,31 @@ def test_broken_geotiff_is_rejected(tmp_path: Path) -> None:
     connector = ChirpsConnector(BOX, DAY, DAY, tmp_path, lambda _: b"not a GeoTIFF")
     with pytest.raises(ChirpsError, match="invalid GeoTIFF"):
         connector.clean(connector.fetch())
+
+
+def test_command_line_runs_the_job_and_reports_rows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from agrofarm_data.cli import main
+    from agrofarm_data.connectors import chirps
+
+    monkeypatch.setattr(chirps, "_download", lambda url: FIXTURE.read_bytes())
+    period = ["--start", "2024-01-01", "--end", "2024-01-01"]
+    folders = ["--raw", str(tmp_path / "raw"), "--out", str(tmp_path / "clean")]
+    args = ["chirps", "--bbox", "-90.6", "14.4", "-90.4", "14.6", *period, *folders]
+    assert main(args) == 0
+    assert (tmp_path / "clean" / "climate_chirps_daily.parquet").is_file()
+    assert "rows" in capsys.readouterr().out
+    assert main(args) == 0  # running it again changes nothing and does not fail
+
+
+def test_command_line_reports_a_bad_area_without_a_traceback(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from agrofarm_data.cli import main
+
+    period = ["--start", "2024-01-01", "--end", "2024-01-01"]
+    folders = ["--raw", str(tmp_path / "raw"), "--out", str(tmp_path / "clean")]
+    args = ["chirps", "--bbox", "-90.4", "14.5", "-90.6", "14.7", *period, *folders]
+    assert main(args) == 2
+    assert "ERROR" in capsys.readouterr().err

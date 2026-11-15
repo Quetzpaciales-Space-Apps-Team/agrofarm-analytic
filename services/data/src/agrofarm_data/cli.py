@@ -1,15 +1,19 @@
 """Command line entry point for the data jobs. Each connector adds its own subcommand."""
 
 import argparse
+import datetime as dt
 import json
 import os
 import sys
+import tempfile
 from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
 from agrofarm_data import __version__
+from agrofarm_data.connector import run_job
 from agrofarm_data.connectors import (
+    chirps,
     enso,
     insivumeh,
     meteomatics,
@@ -149,6 +153,18 @@ def build_parser() -> argparse.ArgumentParser:
     weather.add_argument("--cache", type=Path, required=True, help="Cache and budget directory")
     weather.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
     weather.add_argument("--daily-limit", type=int, default=meteomatics.DEFAULT_DAILY_LIMIT)
+
+    rain = commands.add_parser(
+        "chirps", help="Download CHIRPS v3 daily rainfall for an area (about 18 MB per day)"
+    )
+    rain.add_argument(
+        "--bbox", type=float, nargs=4, required=True,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"), help="Area in EPSG:4326",
+    )  # fmt: skip
+    rain.add_argument("--start", type=dt.date.fromisoformat, required=True, help="YYYY-MM-DD")
+    rain.add_argument("--end", type=dt.date.fromisoformat, required=True, help="YYYY-MM-DD")
+    rain.add_argument("--raw", type=Path, required=True, help="Raw store directory (write once)")
+    rain.add_argument("--out", type=Path, required=True, help="Directory for the clean dataset")
     return parser
 
 
@@ -256,4 +272,17 @@ def main(
         manifest = meteomatics.write_clean(frame, args.out, api.last_response_file)
         used = api.requests_today()
         sys.stdout.write(f"{len(frame)} days -> {manifest} ({used} requests used today)\n")
+    elif args.command == "chirps":
+        with tempfile.TemporaryDirectory() as downloads:
+            try:
+                job = chirps.ChirpsConnector(
+                    tuple(args.bbox), args.start, args.end, Path(downloads),
+                    transport=lambda url: chirps._download(url),
+                )  # fmt: skip
+                manifest = run_job(job, args.raw, args.out)
+            except chirps.ChirpsError as error:
+                sys.stderr.write(f"ERROR: {error}\n")
+                return 2
+        rows = json.loads(manifest.read_text("utf-8"))["rows"]
+        sys.stdout.write(f"{rows} rows -> {manifest}\n")
     return 0
