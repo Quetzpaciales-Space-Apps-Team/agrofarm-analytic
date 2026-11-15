@@ -15,6 +15,7 @@ from schemathesis.specs.openapi.checks import (
 
 from agrofarm_ml.leaves.model import LeafModel
 from agrofarm_ml.main import create_app
+from tests.test_ndvi_outlook import make_outlook
 
 
 class TestLeafPredictor:
@@ -28,7 +29,10 @@ class TestLeafPredictor:
 
 schema = schemathesis.openapi.from_asgi(
     "/openapi.json",
-    create_app(leaf_model=LeafModel(TestLeafPredictor(), {"model_version": "test-only"})),
+    create_app(
+        leaf_model=LeafModel(TestLeafPredictor(), {"model_version": "test-only"}),
+        vegetation_model=make_outlook(),
+    ),
 )
 
 

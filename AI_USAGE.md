@@ -27,3 +27,5 @@ Team members who used another tool add a row here in their next pull request (ru
 
 - The project idea and the choice of challenge.
 - Source datasets (INSIVUMEH, NOAA, NASA, CHIRPS, SoilGrids and the others in the dataset catalog).
+
+OpenAI Codex (GPT-6), 2026-11-15: connected the owner-accepted regional NDVI outlook to serving, preserved the failed original acceptance rule, added quantiles and median SHAP differences, and pinned the release artifact for staging. Human owner approved limited use; no field validation is implied.

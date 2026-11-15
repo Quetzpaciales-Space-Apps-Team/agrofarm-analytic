@@ -23,6 +23,10 @@ class _FarmRequest(BaseModel):
     scenario: Scenario
 
 
+class VegetationRequest(_FarmRequest):
+    pass
+
+
 class SimulateRequest(_FarmRequest):
     crop: CropId
 
