@@ -22,6 +22,8 @@ from rasterio.windows import from_bounds
 from agrofarm_data import __version__
 
 DATASET = "soil_soilgrids_static"
+SOURCE_VERSION = "2.0"
+ATTRIBUTION = "ISRIC - World Soil Information, SoilGrids 2.0"
 DEPTHS = ("0-5cm", "5-15cm", "15-30cm", "30-60cm", "60-100cm", "100-200cm")
 Bbox = tuple[float, float, float, float]  # west, south, east, north (EPSG:4326)
 
@@ -122,12 +124,14 @@ def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Pat
     table_path = out_dir / f"{DATASET}.parquet"
     table.to_parquet(table_path, index=False, engine="pyarrow")
     layers = []
+    source_checksums = {}
     for prop in PROPERTIES:
         for depth in DEPTHS:
             source = _path(raw_dir, prop, depth)
             values, transform = read_layer(source, prop, bbox)
             target = out_dir / "layers" / f"{prop}_{depth}.tif"
             _write_layer(target, values, transform)
+            source_checksums[source.name] = _sha256(source)
             layers.append(
                 {
                     "file": f"layers/{target.name}",
@@ -140,7 +144,9 @@ def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Pat
         "dataset": DATASET,
         "file": table_path.name,
         "source": "ISRIC SoilGrids 2.0 (mean), https://soilgrids.org",
+        "source_version": SOURCE_VERSION,
         "license": "CC BY 4.0. Attribute ISRIC - World Soil Information.",
+        "attribution": ATTRIBUTION,
         "area_name": area_name,
         "bbox": {"west": west, "south": south, "east": east, "north": north},
         "rows": int(len(table)),
@@ -152,6 +158,7 @@ def write_clean(raw_dir: Path, out_dir: Path, bbox: Bbox, area_name: str) -> Pat
         "missing_value": "null (source value 0 is no data)",
         "limitations": LIMITATIONS,
         "layers": layers,
+        "source_checksum_sha256": source_checksums,
         "checksum_sha256": _sha256(table_path),
         "processing_version": __version__,
     }

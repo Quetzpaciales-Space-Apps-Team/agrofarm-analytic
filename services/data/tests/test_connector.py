@@ -27,7 +27,8 @@ def test_run_job_stores_raw_cleans_and_writes_a_valid_manifest(tmp_path: Path) -
     assert stat.S_IMODE(raw.stat().st_mode) == 0o444
     assert manifest["source_checksum_sha256"] == {"fake.csv": sha256(raw)}
     table = pd.read_parquet(manifest_path.parent / manifest["file"])
-    assert [d.date().isoformat() for d in table["date"]] == ["2024-01-01", "2024-01-02", "2024-01-03"]
+    days = [d.date().isoformat() for d in table["date"]]
+    assert days == ["2024-01-01", "2024-01-02", "2024-01-03"]
     assert manifest["checksum_sha256"] == sha256(manifest_path.parent / manifest["file"])
 
 

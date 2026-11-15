@@ -20,6 +20,8 @@ import pandas as pd
 from agrofarm_data import __version__
 
 DATASET = "climate_nasa_power_daily"
+SOURCE_VERSION = "POWER Daily API, AG community (version not recorded in the file)"
+ATTRIBUTION = "NASA Langley Research Center (LaRC) POWER Project"
 MS_TO_KMH = 3.6
 _BEGIN, _END = "-BEGIN HEADER-", "-END HEADER-"
 _LOCATION = re.compile(r"Location:\s*latitude\s+(-?\d+(?:\.\d+)?)\s+longitude\s+(-?\d+(?:\.\d+)?)")
@@ -142,7 +144,9 @@ def write_clean(frame: pd.DataFrame, out_dir: Path, source_file: Path) -> Path:
         "file": table_path.name,
         "source": "NASA POWER Daily API, community AG (MERRA-2 meteorology, "
         "CERES SYN1deg solar radiation), https://power.larc.nasa.gov",
+        "source_version": SOURCE_VERSION,
         "license": "NASA open data. Acknowledge the NASA Langley Research Center POWER Project.",
+        "attribution": ATTRIBUTION,
         "preliminary": False,
         "rows": int(len(frame)),
         "date_range": {

@@ -84,7 +84,9 @@ def test_missing_source_is_reported(tmp_path: Path) -> None:
         store_raw(tmp_path / "nope.csv", tmp_path / "raw", "fake_daily", "v1")
 
 
-@pytest.mark.parametrize(("dataset", "version"), [("../x", "v1"), ("a", "a/b"), ("", "v1"), ("a", "..")])
+@pytest.mark.parametrize(
+    ("dataset", "version"), [("../x", "v1"), ("a", "a/b"), ("", "v1"), ("a", "..")]
+)
 def test_dataset_and_version_must_be_plain_folder_names(
     tmp_path: Path, dataset: str, version: str
 ) -> None:

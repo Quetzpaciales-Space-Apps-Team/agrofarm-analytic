@@ -16,6 +16,8 @@ from agrofarm_data import __version__
 
 DATASET = "climate_insivumeh_daily"
 SENTINEL = -99.9
+SOURCE_VERSION = "Team workbook, sheets 1995-2022 and 2023-2025 (no release number)"
+ATTRIBUTION = "INSIVUMEH, Guatemala"
 HEADER_ROW = 5
 _DATA_SHEET = re.compile(r"^\d{4}\s*[-–]\s*\d{4}$")
 
@@ -108,7 +110,9 @@ def write_clean(frame: pd.DataFrame, out_dir: Path, source_file: Path) -> Path:
         "dataset": DATASET,
         "file": table_path.name,
         "source": "INSIVUMEH, station INSIVUMEH, Guatemala City (team workbook)",
+        "source_version": SOURCE_VERSION,
         "license": "Not stated by the provider. Attribution: INSIVUMEH, Guatemala.",
+        "attribution": ATTRIBUTION,
         "preliminary": True,
         "rows": int(len(frame)),
         "date_range": {
