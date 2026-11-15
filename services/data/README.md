@@ -36,6 +36,44 @@ the STAC response go to `<out>/raw/` (write-once). Collection ids and assets: `s
 and `modis-13Q1-061` (`250m_16_days_NDVI`, `250m_16_days_pixel_reliability`). The cloud mask rules and the
 scale factors are in each manifest. Tests use recorded fixtures in `tests/fixtures/planetary_computer/`.
 
+## AppEEARS: SMAP L4, MODIS and VIIRS (DS-030)
+
+```
+EARTHDATA_USERNAME=... EARTHDATA_PASSWORD=... \
+uv run python -m agrofarm_data appeears --source smap-l4|modis-13q1|viirs-vnp13a1 \
+  --bbox W S E N --start YYYY-MM-DD --end YYYY-MM-DD --raw-dir <dir> --out <dir> [--wait-seconds N]
+```
+
+NASA AppEEARS samples a product for a polygon and returns a bundle. A task takes minutes to an hour, so the
+command never blocks by default: the first run submits the task and stores its id in `<raw-dir>/appeears-state/`,
+and it **exits with code 75** while the task runs. Run the same command again to poll it once; when the task
+is `done` it downloads the statistics files and writes the dataset. `--wait-seconds` keeps polling that long.
+
+| `--source` | Product (confirmed against the catalog) | Output, one row per |
+|---|---|---|
+| `smap-l4` | `SPL4SMGP.008`: surface and root zone soil moisture, m3/m3 | day: count-weighted mean of the 3-hourly samples |
+| `modis-13q1` | `MOD13Q1.061`: NDVI and EVI, 250 m | 16-day composite |
+| `viirs-vnp13a1` | `VNP13A1.002`: NDVI and EVI, 500 m | 16-day composite |
+
+Rules that matter when reading the tables:
+
+- **The statistics include cloudy pixels.** A vegetation composite has values only when at least half of its
+  pixels are in a usable reliability class (MODIS 0 and 1, VIIRS 0, 1 and 2); otherwise the values are null and
+  `status` is `too_cloudy`. A SMAP day has a value only with 6 of its 8 samples. The manifest records the rule.
+  In the rainy season this can leave a whole month empty: all six VIIRS composites of June 2025 for the
+  reference box had between 1 and 49 percent usable pixels. `--min-usable-fraction` lowers the share (the
+  manifest records the value used); the dates it keeps are noisier.
+- Only polygon statistics are kept (a `*-Statistics.csv` of the bundle), not the per-date rasters, and the
+  polygon is a box, not a farm.
+- Each downloaded file is checked against the SHA-256 in the bundle listing. The bundle's `*-request.json`
+  and the signed file URLs are never kept, because AppEEARS puts the account name in them.
+- **Credentials:** AppEEARS does **not** accept the token of the Earthdata profile page (it answers 403). It
+  issues its own session token for the Earthdata user name and password, read from `EARTHDATA_USERNAME` and
+  `EARTHDATA_PASSWORD`. The session token lives in memory for one run; nothing secret is logged or stored.
+  The account must have accepted the AppEEARS terms once at https://appeears.earthdatacloud.nasa.gov.
+
+Tests use the answers recorded from the real API (`tests/fixtures/appeears/`, see its README).
+
 ## CHIRPS rainfall (DS-021)
 
 Run a local monthly ingestion with:
