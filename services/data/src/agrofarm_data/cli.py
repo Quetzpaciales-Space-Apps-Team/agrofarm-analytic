@@ -4,10 +4,18 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from datetime import date
 from pathlib import Path
 
 from agrofarm_data import __version__
-from agrofarm_data.connectors import enso, insivumeh, nasa_power, soilgrids, worldcover
+from agrofarm_data.connectors import (
+    enso,
+    insivumeh,
+    nasa_power,
+    planetary_computer,
+    soilgrids,
+    worldcover,
+)
 from agrofarm_data.terrain import pipeline as terrain
 
 
@@ -95,11 +103,69 @@ def build_parser() -> argparse.ArgumentParser:
     relief.add_argument(
         "--area-name", required=True, help="Name of the area, written to the manifest"
     )
+
+    ndvi = commands.add_parser(
+        "planetary-ndvi",
+        help="NDVI series with a cloud mask from Microsoft Planetary Computer for a small box",
+    )
+    ndvi.add_argument(
+        "--collection", required=True, choices=sorted(planetary_computer.SPECS),
+        help="STAC collection (modis-13q1-061 is the STAC id modis-13Q1-061)",
+    )  # fmt: skip
+    ndvi.add_argument(
+        "--bbox",
+        type=float,
+        nargs=4,
+        required=True,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="Small area in EPSG:4326",
+    )
+    ndvi.add_argument("--start", required=True, help="First day, YYYY-MM-DD")
+    ndvi.add_argument("--end", required=True, help="Last day, YYYY-MM-DD")
+    ndvi.add_argument("--out", type=Path, required=True, help="Directory for the dataset")
+    ndvi.add_argument(
+        "--area-name", required=True, help="Name of the area, written to the manifest"
+    )
+    ndvi.add_argument(
+        "--max-items", type=int, default=None, help="Keep this many scenes, spread over the dates"
+    )
+    ndvi.add_argument(
+        "--max-cloud", type=float, default=100.0,
+        help="Sentinel-2 only: skip scenes whose tile cloud cover is at or above this percent",
+    )  # fmt: skip
+    ndvi.add_argument(
+        "--raw-dir", type=Path, default=None, help="Raw store folder (default: <out>/raw)"
+    )
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+def _check_ndvi_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    west, south, east, north = args.bbox
+    if not (-180 <= west < east <= 180 and -90 <= south < north <= 90):
+        parser.error(
+            "--bbox must be WEST SOUTH EAST NORTH in degrees with west < east, south < north"
+        )
+    try:
+        first, last = date.fromisoformat(args.start), date.fromisoformat(args.end)
+    except ValueError:
+        parser.error("--start and --end must be YYYY-MM-DD")
+    if first > last:
+        parser.error("--start must not be after --end")
+    if args.max_items is not None and args.max_items < 1:
+        parser.error("--max-items must be at least 1")
+
+
+def main(
+    argv: Sequence[str] | None = None,
+    *,
+    http: planetary_computer.HttpJson = planetary_computer.http_json,
+    reader: planetary_computer.RasterReader = planetary_computer.read_window,
+) -> int:
+    """Run a command. `http` and `reader` let tests replace the network for planetary-ndvi."""
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.command == "planetary-ndvi":
+        _check_ndvi_args(parser, args)
     if args.command == "insivumeh":
         frame = insivumeh.read_insivumeh(args.input)
         manifest = insivumeh.write_clean(frame, args.out, source_file=args.input)
@@ -148,4 +214,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         manifest = terrain.write_clean(args.input, args.out, tuple(args.bbox), args.area_name)
         count = len(json.loads(manifest.read_text("utf-8"))["layers"])
         sys.stdout.write(f"{count} layers -> {manifest}\n")
+    elif args.command == "planetary-ndvi":
+        manifest = planetary_computer.run_planetary_ndvi(
+            args.collection, tuple(args.bbox), args.start, args.end, args.out, args.area_name,
+            max_items=args.max_items, max_cloud=args.max_cloud, raw_dir=args.raw_dir,
+            http=http, reader=reader,
+        )  # fmt: skip
+        info = json.loads(manifest.read_text("utf-8"))
+        with_ndvi = sum(1 for x in info["scenes"] if x["status"] == "ok")
+        sys.stdout.write(
+            f"{info['rows']} scenes (found {info['scenes_found']}), {with_ndvi} with NDVI "
+            f"-> {manifest}\n"
+        )
+        for text in info["warnings"]:
+            sys.stderr.write(f"WARNING: {text}\n")
     return 0

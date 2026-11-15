@@ -22,6 +22,20 @@ clean/<dataset>.manifest.json       one manifest per dataset
   spatial resolution, `checksum_sha256` of the output, `source_checksum_sha256` of the raw input
   (or `no_raw_input: true`) and processing version.
 
+## Planetary Computer NDVI (DS-031)
+
+```
+uv run python -m agrofarm_data planetary-ndvi --collection sentinel-2-l2a|modis-13q1-061 \
+  --bbox W S E N --start YYYY-MM-DD --end YYYY-MM-DD --out <dir> --area-name <name> [--max-items N]
+```
+
+Searches the public Planetary Computer STAC API (standard library only, no key), reads a window of the
+cloud-optimized GeoTIFFs and writes a Parquet NDVI series (one row per scene, null NDVI when the valid
+share is below 25 percent), one tiled NDVI GeoTIFF per scene in `layers/` and a manifest. Raw windows and
+the STAC response go to `<out>/raw/` (write-once). Collection ids and assets: `sentinel-2-l2a` (B04, B08, SCL)
+and `modis-13Q1-061` (`250m_16_days_NDVI`, `250m_16_days_pixel_reliability`). The cloud mask rules and the
+scale factors are in each manifest. Tests use recorded fixtures in `tests/fixtures/planetary_computer/`.
+
 ## Add a connector
 
 1. Write tests first, with a small recorded or synthetic fixture. CI never calls external APIs.
