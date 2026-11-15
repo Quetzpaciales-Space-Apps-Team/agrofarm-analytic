@@ -11,6 +11,7 @@ from datetime import date
 from pathlib import Path
 
 from agrofarm_data import __version__
+from agrofarm_data.chirps_job import DirectoryUploader, run_chirps_job
 from agrofarm_data.connector import Connector, run_job
 from agrofarm_data.connectors import (
     chirps,
@@ -22,6 +23,7 @@ from agrofarm_data.connectors import (
     soilgrids,
     worldcover,
 )
+from agrofarm_data.gcs_storage import GcsStorage
 from agrofarm_data.terrain import pipeline as terrain
 
 
@@ -45,10 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
         "nasa-power", help="Clean a NASA POWER daily point CSV, or fetch point or regional data"
     )
     power.add_argument("--input", type=Path, help="Path to the POWER daily .csv (offline mode)")
-    power.add_argument(
-        "--fetch", choices=["point", "regional"],
-        help="Download from the POWER API (community AG) instead of reading --input",
-    )  # fmt: skip
+    power.add_argument("--fetch", choices=["point", "regional"])
     power.add_argument("--lat", type=float, help="Latitude for --fetch point")
     power.add_argument("--lon", type=float, help="Longitude for --fetch point")
     power.add_argument(
@@ -170,7 +169,7 @@ def build_parser() -> argparse.ArgumentParser:
     weather.add_argument("--daily-limit", type=int, default=meteomatics.DEFAULT_DAILY_LIMIT)
 
     rain = commands.add_parser(
-        "chirps", help="Download CHIRPS v3 daily rainfall for an area (about 18 MB per day)"
+        "chirps", help="Read CHIRPS rainfall windows and write a monthly dataset"
     )
     rain.add_argument(
         "--bbox", type=float, nargs=4, required=True,
@@ -178,8 +177,15 @@ def build_parser() -> argparse.ArgumentParser:
     )  # fmt: skip
     rain.add_argument("--start", type=dt.date.fromisoformat, required=True, help="YYYY-MM-DD")
     rain.add_argument("--end", type=dt.date.fromisoformat, required=True, help="YYYY-MM-DD")
-    rain.add_argument("--raw", type=Path, required=True, help="Raw store directory (write once)")
-    rain.add_argument("--out", type=Path, required=True, help="Directory for the clean dataset")
+    rain.add_argument("--out", type=Path, help="Local clean output directory")
+    rain.add_argument(
+        "--raw-dir", "--raw", dest="raw_dir", type=Path, help="Local immutable raw store"
+    )
+    rain.add_argument(
+        "--gcs", action="store_true", help="Run as a Cloud Run Job and upload to Cloud Storage"
+    )
+    rain.add_argument("--raw-bucket", help="Raw bucket (default: GCS_BUCKET_RAW)")
+    rain.add_argument("--clean-bucket", help="Clean bucket (default: GCS_BUCKET_CLEAN)")
     return parser
 
 
@@ -218,12 +224,16 @@ def main(
     http: planetary_computer.HttpJson = planetary_computer.http_json,
     reader: planetary_computer.RasterReader = planetary_computer.read_window,
     power_transport: nasa_power.Transport | None = None,
+    chirps_window_reader: chirps.WindowReader | None = None,
+    gcs_storage: DirectoryUploader | None = None,
 ) -> int:
-    """Run a command. `http`, `reader` and `power_transport` let tests replace the network."""
+    """Run a command with injectable HTTP and raster readers for offline tests."""
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "nasa-power":
         _check_power_args(parser, args)
+    if args.command == "chirps":
+        _check_chirps_args(parser, args)
     if args.command == "planetary-ndvi":
         _check_ndvi_args(parser, args)
     if args.command == "insivumeh":
@@ -251,7 +261,8 @@ def main(
             except nasa_power.PowerError as error:
                 sys.stderr.write(f"ERROR: {error}\n")
                 return 2
-        sys.stdout.write(f"{json.loads(manifest.read_text('utf-8'))['rows']} rows -> {manifest}\n")
+        rows = json.loads(manifest.read_text("utf-8"))["rows"]
+        sys.stdout.write(f"{rows} rows -> {manifest}\n")
     elif args.command == "nasa-power":
         frame = nasa_power.read_power(args.input)
         manifest = nasa_power.write_clean(frame, args.out, source_file=args.input)
@@ -322,16 +333,49 @@ def main(
         used = api.requests_today()
         sys.stdout.write(f"{len(frame)} days -> {manifest} ({used} requests used today)\n")
     elif args.command == "chirps":
-        with tempfile.TemporaryDirectory() as downloads:
-            try:
-                job = chirps.ChirpsConnector(
-                    tuple(args.bbox), args.start, args.end, Path(downloads),
-                    transport=lambda url: chirps._download(url),
-                )  # fmt: skip
-                manifest = run_job(job, args.raw, args.out)
-            except chirps.ChirpsError as error:
-                sys.stderr.write(f"ERROR: {error}\n")
-                return 2
-        rows = json.loads(manifest.read_text("utf-8"))["rows"]
-        sys.stdout.write(f"{rows} rows -> {manifest}\n")
+        start, end = args.start, args.end
+        bbox = tuple(args.bbox)
+        if args.gcs:
+            raw_bucket = args.raw_bucket or os.environ.get("GCS_BUCKET_RAW")
+            clean_bucket = args.clean_bucket or os.environ.get("GCS_BUCKET_CLEAN")
+            if not raw_bucket or not clean_bucket:
+                parser.error("--gcs requires both bucket flags or GCS_BUCKET_RAW/GCS_BUCKET_CLEAN")
+            manifest_uri = run_chirps_job(
+                bbox=bbox,
+                start=start,
+                end=end,
+                raw_bucket=raw_bucket,
+                clean_bucket=clean_bucket,
+                window_reader=chirps_window_reader or chirps._read_remote_window,
+                uploader=gcs_storage or GcsStorage(),
+            )  # fmt: skip
+            sys.stdout.write(f"CHIRPS monthly dataset uploaded -> {manifest_uri}\n")
+        else:
+            if args.out is None:
+                parser.error("local chirps mode requires --out")
+            raw_dir = args.raw_dir or args.out / "raw"
+            connector = chirps.ChirpsConnector(
+                bbox,
+                start,
+                end,
+                raw_dir / chirps.DATASET / chirps.VERSION,
+                window_reader=chirps_window_reader or chirps._read_remote_window,
+            )
+            manifest = run_job(connector, raw_dir, args.out)
+            info = json.loads(manifest.read_text("utf-8"))
+            sys.stdout.write(f"{info['rows']} cells -> {manifest}\n")
     return 0
+
+
+def _check_chirps_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    try:
+        chirps._grid(tuple(args.bbox))
+        first, last = args.start, args.end
+        if first > last or first < date(1981, 1, 1):
+            raise ValueError
+        if args.gcs and (first.year, first.month) != (last.year, last.month):
+            parser.error("Cloud Run CHIRPS executions must cover one calendar month")
+        if not args.gcs and args.out is None:
+            parser.error("local chirps mode requires --out")
+    except ValueError:
+        parser.error("CHIRPS requires a valid bbox and ordered YYYY-MM-DD dates")

@@ -9,13 +9,10 @@ import hashlib
 import json
 import math
 import re
-import time
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 from typing import cast
-from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
 
 import numpy as np
 import pandas as pd
@@ -39,27 +36,52 @@ LIMITATIONS = [
 ]
 _NAME = re.compile(r"^chirps-v3\.0\.rnl\.(\d{4})\.(\d{2})\.(\d{2})\.tif$")
 Bbox = tuple[float, float, float, float]  # west, south, east, north, EPSG:4326
-Transport = Callable[[str], bytes]
+WindowReader = Callable[[str, Bbox], bytes]
 
 
 class ChirpsError(ValueError):
     """The requested area or a CHIRPS source file is invalid."""
 
 
-def _download(url: str) -> bytes:
-    """Fetch one immutable daily source file with bounded retries and a timeout."""
-    for attempt in range(3):
-        try:
-            with urlopen(url, timeout=60) as response:  # noqa: S310 - fixed HTTPS host
-                return bytes(response.read())
-        except HTTPError as exc:
-            if exc.code not in {429, 500, 502, 503, 504} or attempt == 2:
-                raise ChirpsError(f"CHIRPS download failed with HTTP {exc.code}") from exc
-        except (URLError, TimeoutError) as exc:
-            if attempt == 2:
-                raise ChirpsError("CHIRPS download failed after three attempts") from exc
-        time.sleep(2**attempt)
-    raise AssertionError("unreachable")
+def _read_remote_window(url: str, bbox: Bbox) -> bytes:
+    """Read only the requested pixels through GDAL's HTTP range support."""
+    west, north, width, height = _grid(bbox)
+    try:
+        with rasterio.open(f"/vsicurl/{url}") as source:
+            transform = source.transform
+            if source.crs is None or source.crs.to_epsg() != 4326 or source.count != 1:
+                raise ChirpsError("CHIRPS response must contain one EPSG:4326 raster band")
+            if (
+                not math.isclose(transform.a, CELL_DEGREES, abs_tol=1e-7)
+                or not math.isclose(-transform.e, CELL_DEGREES, abs_tol=1e-7)
+                or not math.isclose(transform.b, 0, abs_tol=1e-9)
+                or not math.isclose(transform.d, 0, abs_tol=1e-9)
+            ):
+                raise ChirpsError("CHIRPS response is not an unrotated 0.05 degree grid")
+            col = round((west - transform.c) / CELL_DEGREES)
+            row = round((transform.f - north) / CELL_DEGREES)
+            if (
+                abs(transform.c + col * CELL_DEGREES - west) > 1e-5
+                or abs(transform.f - row * CELL_DEGREES - north) > 1e-5
+            ):
+                raise ChirpsError("CHIRPS response is not aligned to the requested grid")
+            if col < 0 or row < 0 or col + width > source.width or row + height > source.height:
+                raise ChirpsError("Training area is outside CHIRPS source coverage")
+            values = source.read(1, window=Window(col, row, width, height))
+            nodata = source.nodata if source.nodata is not None else SOURCE_NODATA
+            profile = {
+                "driver": "GTiff", "width": width, "height": height, "count": 1,
+                "dtype": "float32", "crs": "EPSG:4326",
+                "transform": from_origin(west, north, CELL_DEGREES, CELL_DEGREES),
+                "nodata": nodata,
+            }  # fmt: skip
+            with MemoryFile() as memory:
+                with memory.open(**profile) as output:
+                    output.write(values.astype("float32"), 1)
+                    output.update_tags(source_url=url)
+                return bytes(memory.read())
+    except rasterio.errors.RasterioIOError as exc:
+        raise ChirpsError("Unable to read the CHIRPS HTTP raster window") from exc
 
 
 def _sha256(path: Path) -> str:
@@ -99,14 +121,14 @@ class ChirpsConnector:
         start: date,
         end: date,
         download_dir: Path,
-        transport: Transport = _download,
+        window_reader: WindowReader = _read_remote_window,
     ) -> None:
         _grid(training_area)
         if end < start or start < date(1981, 1, 1):
             raise ChirpsError("Invalid CHIRPS date range")
         self.training_area = training_area
         self.start, self.end = start, end
-        self.download_dir, self.transport = download_dir, transport
+        self.download_dir, self.window_reader = download_dir, window_reader
 
     def fetch(self) -> list[Path]:
         """Download one official CHIRPS v3 final RNL GeoTIFF per requested day."""
@@ -115,7 +137,7 @@ class ChirpsConnector:
         for day in pd.date_range(self.start, self.end, freq="D"):
             filename = f"chirps-v3.0.rnl.{day:%Y.%m.%d}.tif"
             url = f"{BASE_URL}/{day:%Y}/{filename}"
-            data = self.transport(url)
+            data = self.window_reader(url, self.training_area)
             if not data:
                 raise ChirpsError(f"CHIRPS returned an empty response for {day:%Y-%m-%d}")
             path = self.download_dir / filename

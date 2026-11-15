@@ -119,6 +119,7 @@ jobs:
           agrofarm_data.connectors.nasa_power, agrofarm_data.connectors.planetary_computer,
           agrofarm_data.connectors.soilgrids,
           agrofarm_data.connectors.worldcover, agrofarm_data.terrain.pipeline;
+          import agrofarm_data.chirps_job, agrofarm_data.gcs_storage;
           agrofarm_data.manifest.load_schema()"
       - name: Trivy image scan
         run: >-
