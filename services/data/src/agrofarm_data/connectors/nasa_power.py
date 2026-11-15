@@ -19,7 +19,7 @@ from io import StringIO
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import pandas as pd
 
@@ -29,6 +29,20 @@ DATASET = "climate_nasa_power_daily"
 SOURCE_VERSION = "POWER Daily API, AG community (version not recorded in the file)"
 ATTRIBUTION = "NASA Langley Research Center (LaRC) POWER Project"
 MS_TO_KMH = 3.6
+USER_AGENT = "agrofarm-data-connector/0.1"
+# Area limits of the regional endpoint, confirmed against the live API on 2026-11-15.
+REGIONAL_MIN_DEGREES = 2.0
+REGIONAL_MAX_DEGREES = 10.0
+POINT_LIMITATIONS = [
+    "POWER is a reanalysis (MERRA-2, CERES SYN1deg), not a station measurement. A point value "
+    "is the average of a grid cell of about 0.5 x 0.625 degrees (1 degree for solar radiation).",
+]
+REGIONAL_LIMITATIONS = [
+    *POINT_LIMITATIONS,
+    "The regional endpoint only accepts boxes that span 2 to 10 degrees in latitude and in "
+    "longitude, and one variable per request, so this job makes one request per variable. "
+    "Use the point endpoint for a smaller area.",
+]
 _BEGIN, _END = "-BEGIN HEADER-", "-END HEADER-"
 _LOCATION = re.compile(r"Location:\s*latitude\s+(-?\d+(?:\.\d+)?)\s+longitude\s+(-?\d+(?:\.\d+)?)")
 _MISSING = re.compile(r"missing source data.*?:\s*(-?\d+(?:\.\d+)?)\s*$", re.MULTILINE)
@@ -169,6 +183,7 @@ def write_clean(frame: pd.DataFrame, out_dir: Path, source_file: Path) -> Path:
         "crs": "EPSG:4326",
         "units": UNITS,
         "conversions": {"wind_speed_kmh": "WS2M in m/s multiplied by 3.6"},
+        "limitations": POINT_LIMITATIONS,
         "missing_value": "null",
         "missing_fraction": {
             column: round(float(frame[column].isna().mean()), 4) for column in UNITS
@@ -190,7 +205,8 @@ def _download(url: str) -> bytes:
     """Fetch a POWER response with a timeout and bounded retries for transient failures."""
     for attempt in range(3):
         try:
-            with urlopen(url, timeout=30) as response:  # noqa: S310 - fixed HTTPS endpoint
+            request = Request(url, headers={"User-Agent": USER_AGENT})  # noqa: S310
+            with urlopen(request, timeout=30) as response:  # noqa: S310 - fixed HTTPS endpoint
                 return bytes(response.read())
         except HTTPError as exc:
             if exc.code not in {429, 500, 502, 503, 504} or attempt == 2:
@@ -346,8 +362,11 @@ class PowerRegionalConnector:
     ) -> None:
         _validate_coordinates(latitude_min, longitude_min)
         _validate_coordinates(latitude_max, longitude_max)
-        if latitude_max - latitude_min < 2 or longitude_max - longitude_min < 2:
+        spans = (latitude_max - latitude_min, longitude_max - longitude_min)
+        if min(spans) < REGIONAL_MIN_DEGREES:
             raise PowerError("POWER regional bounding box must span at least 2 degrees per axis")
+        if max(spans) > REGIONAL_MAX_DEGREES:
+            raise PowerError("POWER regional bounding box must span at most 10 degrees per axis")
         _dates(start, end)
         self.bounds = (latitude_min, latitude_max, longitude_min, longitude_max)
         self.start, self.end = start, end
@@ -443,6 +462,7 @@ class PowerRegionalConnector:
             "crs": "EPSG:4326",
             "units": UNITS,
             "conversions": {"wind_speed_kmh": "WS2M in m/s multiplied by 3.6"},
+            "limitations": REGIONAL_LIMITATIONS,
             "missing_value": "null",
             "checksum_sha256": _sha256(table),
             "source_checksum_sha256": {path.name: _sha256(path) for path in raw_files},

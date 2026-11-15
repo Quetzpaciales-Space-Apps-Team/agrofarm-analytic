@@ -11,7 +11,7 @@ from datetime import date
 from pathlib import Path
 
 from agrofarm_data import __version__
-from agrofarm_data.connector import run_job
+from agrofarm_data.connector import Connector, run_job
 from agrofarm_data.connectors import (
     chirps,
     enso,
@@ -41,8 +41,23 @@ def build_parser() -> argparse.ArgumentParser:
     indices.add_argument("--roni", type=Path, required=True, help="Path to RONI.ascii.txt")
     indices.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
 
-    power = commands.add_parser("nasa-power", help="Clean a NASA POWER daily point CSV")
-    power.add_argument("--input", type=Path, required=True, help="Path to the POWER daily .csv")
+    power = commands.add_parser(
+        "nasa-power", help="Clean a NASA POWER daily point CSV, or fetch point or regional data"
+    )
+    power.add_argument("--input", type=Path, help="Path to the POWER daily .csv (offline mode)")
+    power.add_argument(
+        "--fetch", choices=["point", "regional"],
+        help="Download from the POWER API (community AG) instead of reading --input",
+    )  # fmt: skip
+    power.add_argument("--lat", type=float, help="Latitude for --fetch point")
+    power.add_argument("--lon", type=float, help="Longitude for --fetch point")
+    power.add_argument(
+        "--bbox", type=float, nargs=4, metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="Area for --fetch regional: 2 to 10 degrees per axis, EPSG:4326",
+    )  # fmt: skip
+    power.add_argument("--start", type=dt.date.fromisoformat, help="YYYY-MM-DD, for --fetch")
+    power.add_argument("--end", type=dt.date.fromisoformat, help="YYYY-MM-DD, for --fetch")
+    power.add_argument("--raw", type=Path, help="Raw store directory (write once), for --fetch")
     power.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
 
     soil = commands.add_parser("soilgrids", help="Crop and scale the SoilGrids layers for an area")
@@ -184,15 +199,31 @@ def _check_ndvi_args(parser: argparse.ArgumentParser, args: argparse.Namespace) 
         parser.error("--max-items must be at least 1")
 
 
+def _check_power_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    if (args.input is None) == (args.fetch is None):
+        parser.error("give exactly one of --input (a CSV) or --fetch (point or regional)")
+    if args.fetch is None:
+        return
+    if args.start is None or args.end is None or args.raw is None:
+        parser.error("--fetch needs --start, --end and --raw")
+    if args.fetch == "point" and (args.lat is None or args.lon is None):
+        parser.error("--fetch point needs --lat and --lon")
+    if args.fetch == "regional" and args.bbox is None:
+        parser.error("--fetch regional needs --bbox WEST SOUTH EAST NORTH")
+
+
 def main(
     argv: Sequence[str] | None = None,
     *,
     http: planetary_computer.HttpJson = planetary_computer.http_json,
     reader: planetary_computer.RasterReader = planetary_computer.read_window,
+    power_transport: nasa_power.Transport | None = None,
 ) -> int:
-    """Run a command. `http` and `reader` let tests replace the network for planetary-ndvi."""
+    """Run a command. `http`, `reader` and `power_transport` let tests replace the network."""
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.command == "nasa-power":
+        _check_power_args(parser, args)
     if args.command == "planetary-ndvi":
         _check_ndvi_args(parser, args)
     if args.command == "insivumeh":
@@ -203,6 +234,24 @@ def main(
         frame = enso.read_enso(args.oni, args.roni)
         manifest = enso.write_clean(frame, args.out, oni_file=args.oni, roni_file=args.roni)
         sys.stdout.write(f"{len(frame)} rows -> {manifest}\n")
+    elif args.command == "nasa-power" and args.fetch is not None:
+        send = power_transport or nasa_power._download
+        with tempfile.TemporaryDirectory() as downloads:
+            try:
+                if args.fetch == "point":
+                    power_job: Connector = nasa_power.PowerPointConnector(
+                        args.lat, args.lon, args.start, args.end, Path(downloads), send
+                    )
+                else:
+                    west, south, east, north = args.bbox
+                    power_job = nasa_power.PowerRegionalConnector(
+                        south, north, west, east, args.start, args.end, Path(downloads), send
+                    )
+                manifest = run_job(power_job, args.raw, args.out)
+            except nasa_power.PowerError as error:
+                sys.stderr.write(f"ERROR: {error}\n")
+                return 2
+        sys.stdout.write(f"{json.loads(manifest.read_text('utf-8'))['rows']} rows -> {manifest}\n")
     elif args.command == "nasa-power":
         frame = nasa_power.read_power(args.input)
         manifest = nasa_power.write_clean(frame, args.out, source_file=args.input)

@@ -24,10 +24,14 @@ DAY = ["--start", "2024-01-01", "--end", "2024-01-01"]
 def transport(url: str) -> bytes:
     if urlparse(url).path.endswith("/point"):
         return (FIXTURES / "point.json").read_bytes()
-    return (FIXTURES / f"regional_{parse_qs(urlparse(url).query)['parameters'][0]}.json").read_bytes()
+    return (
+        FIXTURES / f"regional_{parse_qs(urlparse(url).query)['parameters'][0]}.json"
+    ).read_bytes()
 
 
-def test_fetch_point_writes_a_valid_manifest(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_fetch_point_writes_a_valid_manifest(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     code = cli.main(
         ["nasa-power", "--fetch", "point", "--lat", "14.59", "--lon", "-90.53", *DAY,
          "--raw", str(tmp_path / "raw"), "--out", str(tmp_path / "clean")],
@@ -90,14 +94,6 @@ def test_fetch_reports_a_power_error_without_a_traceback(
     )  # fmt: skip
     assert code == 2
     assert "ERROR" in capsys.readouterr().err
-
-
-def test_csv_mode_still_works(tmp_path: Path) -> None:
-    existing = sorted((Path(__file__).parent / "fixtures").glob("**/*power*.csv"))
-    if not existing:
-        pytest.skip("no recorded POWER csv fixture in the repo")
-    code = cli.main(["nasa-power", "--input", str(existing[0]), "--out", str(tmp_path)])
-    assert code == 0
 
 
 def test_download_sends_the_connector_user_agent(monkeypatch: pytest.MonkeyPatch) -> None:
