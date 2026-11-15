@@ -55,6 +55,13 @@ paths:
                     unit: "%"
                     status: stub
                     notes: Fixed rules, not a trained model. Do not read the numbers as predictions.
+                  - name: agrofarm-rotation-rule-engine
+                    version: rules-0.1.0
+                    target: rotation_score
+                    unit: score_0_to_1
+                    status: rule_engine
+                    notes: Rule engine over a provisional crop traits table. Not a trained model. Needs review by a local agronomist.
+                    data_versions: { crop_traits: 0.1.0-provisional }
   /v1/simulate:
     post:
       tags: [simulation]
@@ -108,6 +115,10 @@ paths:
       tags: [rotations]
       operationId: scoreRotations
       summary: Score and explain at least three rotation strategies, including the current one
+      description: >
+        Rule engine over a versioned crop traits table that is provisional and not reviewed by an
+        agronomist. It is not a trained model. Every strategy needs local review. The scenario
+        moves scores through named rules; each moved score is explained in `why`.
       requestBody:
         required: true
         content:
@@ -157,8 +168,9 @@ components:
               version: { type: string }
               target: { type: string }
               unit: { type: string }
-              status: { type: string, enum: [stub, trained] }
+              status: { type: string, enum: [stub, rule_engine, trained] }
               notes: { type: string }
+              data_versions: { type: object, additionalProperties: { type: string } }
     ParseError:
       type: object
       required: [detail]
@@ -235,7 +247,13 @@ components:
           required: [weights, constraints]
           properties:
             weights: { type: object, additionalProperties: { type: number, minimum: 0, maximum: 1 } }
-            constraints: { type: object }
+            constraints:
+              type: object
+              description: >
+                Optional farmer constraints. Understood keys: avoid_crops (array of crop names;
+                strategies that contain one are penalised and say so) and water_limited
+                (boolean; doubles the weight of the water_use priority). Other keys are
+                ignored and reported as a gap in every strategy.
         scenario: { $ref: "#/components/schemas/Scenario" }
     Scores:
       type: object
