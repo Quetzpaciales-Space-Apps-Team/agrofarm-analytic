@@ -34,7 +34,14 @@ def test_cd_workflow_filters_changed_services_and_enforces_authenticated_ml_and_
     # ml-service is deployed as Cloud Run service with authenticated invocation only
     assert "ml-service-staging" in raw
     assert "ml-service-prod" in raw
-    assert "--no-allow-unauthenticated" in raw
+    # `gcloud run services update` rejects access flags ("unrecognized arguments"), so the
+    # workflow must not pass one, and must never open the service to the public.
+    assert "--no-allow-unauthenticated" not in raw
+    assert "--allow-unauthenticated" not in raw
+    assert "allUsers" not in raw.replace('grep -q "allUsers"', "")
+    # After each ml-service deploy the workflow checks that the service is not public.
+    assert raw.count("gcloud run services get-iam-policy ml-service-") == 2
+    assert raw.count('grep -q "allUsers"') == 2
 
     # data-service is deployed as Cloud Run job
     assert "gcloud run jobs update data-service-staging" in raw

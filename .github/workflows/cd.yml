@@ -69,6 +69,9 @@ jobs:
           docker build -t "$IMAGE_URI" services/ml
           docker push "$IMAGE_URI"
 
+      # `gcloud run services update` only changes the revision and has no access flag.
+      # Who may invoke ml-service is an IAM policy on the service: this step never grants
+      # public access, and the next step fails the deploy if the service is public.
       - name: Deploy ml-service to Cloud Run staging (authenticated only)
         env:
           IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/ml-service:${{ github.sha }}
@@ -77,8 +80,21 @@ jobs:
             --project="${{ secrets.GCP_PROJECT_ID }}" \
             --region="${{ secrets.GCP_REGION }}" \
             --image="$IMAGE_URI" \
-            --no-allow-unauthenticated \
             --quiet
+
+      - name: Check that ml-service is not public (staging)
+        run: |
+          POLICY="$(gcloud run services get-iam-policy ml-service-staging \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --format=json)" || {
+            echo "::warning::Could not read the IAM policy (the deploy identity may lack run.services.getIamPolicy). Public access was not checked."
+            exit 0
+          }
+          if echo "$POLICY" | grep -q "allUsers"; then
+            echo "::error::ml-service-staging is invokable without authentication."
+            exit 1
+          fi
 
   deploy-data-staging:
     name: Deploy data-service job (staging)
@@ -156,8 +172,21 @@ jobs:
             --project="${{ secrets.GCP_PROJECT_ID }}" \
             --region="${{ secrets.GCP_REGION }}" \
             --image="$IMAGE_URI" \
-            --no-allow-unauthenticated \
             --quiet
+
+      - name: Check that ml-service is not public (production)
+        run: |
+          POLICY="$(gcloud run services get-iam-policy ml-service-prod \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --format=json)" || {
+            echo "::warning::Could not read the IAM policy (the deploy identity may lack run.services.getIamPolicy). Public access was not checked."
+            exit 0
+          }
+          if echo "$POLICY" | grep -q "allUsers"; then
+            echo "::error::ml-service-prod is invokable without authentication."
+            exit 1
+          fi
 
   deploy-data-production:
     name: Deploy data-service job (production)
