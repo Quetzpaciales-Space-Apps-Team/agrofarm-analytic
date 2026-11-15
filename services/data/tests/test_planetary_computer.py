@@ -46,9 +46,7 @@ def fixture(name: str) -> dict[str, Any]:
 
 # SCL of the clear scene: row 0 vegetation, bare, water, unclassified (kept); row 1 shadow,
 # medium cloud, high cloud, cirrus; row 2 no data, saturated, snow, dark area (only the last kept).
-SCL_CLEAR = np.array(
-    [[4, 5, 6, 7], [3, 8, 9, 10], [0, 1, 11, 2], [4, 4, 4, 4]], dtype="uint8"
-)
+SCL_CLEAR = np.array([[4, 5, 6, 7], [3, 8, 9, 10], [0, 1, 11, 2], [4, 4, 4, 4]], dtype="uint8")
 
 
 class FakeApi:
@@ -94,7 +92,8 @@ class FakeReader:
     def __call__(self, href: str, bbox: pc.Bbox, like: Raster | None) -> Raster:
         self.hrefs.append(href)
         for (item_id, asset), data in self.arrays.items():
-            if item_id.split(".")[0] in href and asset in href:
+            stem = item_id.split("_R0")[0].split(".061")[0]  # the part the href repeats
+            if stem in href and asset in href:
                 if data is None:
                     raise OSError("HTTP response code: 403")
                 return Raster(data, GRID, self.crs)
@@ -137,7 +136,9 @@ def test_reflectance_offset_is_read_from_the_processing_baseline() -> None:
 
 def test_old_baseline_has_no_offset() -> None:
     item = {"properties": {"s2:processing_baseline": "03.01"}, "assets": {}}
-    assert reflectance_params(item) == (pytest.approx(0.0001), 0.0)
+    scale, offset = reflectance_params(item)
+    assert scale == pytest.approx(0.0001)
+    assert offset == 0.0
 
 
 def test_stac_raster_bands_win_over_the_baseline_rule() -> None:
@@ -145,7 +146,9 @@ def test_stac_raster_bands_win_over_the_baseline_rule() -> None:
         "properties": {"s2:processing_baseline": "05.11"},
         "assets": {"B04": {"raster:bands": [{"scale": 0.0002, "offset": -0.2}]}},
     }
-    assert reflectance_params(item) == (pytest.approx(0.0002), pytest.approx(-0.2))
+    scale, offset = reflectance_params(item)
+    assert scale == pytest.approx(0.0002)
+    assert offset == pytest.approx(-0.2)
 
 
 def test_item_without_baseline_or_scale_is_rejected() -> None:
@@ -165,9 +168,9 @@ def test_ndvi_uses_the_offset_and_masks_cloud_classes() -> None:
     kept = ~np.isnan(ndvi)
     assert kept.sum() == 9
     for cls in (0, 1, 3, 8, 9, 10, 11):
-        assert np.isnan(ndvi[SCL_CLEAR == cls]).all(), cls
+        assert np.isnan(ndvi[cls == SCL_CLEAR]).all(), cls
     for cls in (2, 4, 5, 6, 7):
-        assert not np.isnan(ndvi[SCL_CLEAR == cls]).any(), cls
+        assert not np.isnan(ndvi[cls == SCL_CLEAR]).any(), cls
 
 
 def test_ndvi_is_per_pixel_and_zero_dn_is_no_data() -> None:
@@ -270,7 +273,7 @@ def test_search_follows_next_links_and_drops_duplicates() -> None:
     items = pc.search_items(http, pc.SPECS["sentinel-2-l2a"], BBOX, "2025-01-01", "2025-01-31", 100)
     assert len(items) == 2
     assert bodies[1] is not None
-    assert bodies[1]["token"] == "next:1"
+    assert bodies[1]["token"] == "next:1"  # noqa: S105
     assert bodies[1]["collections"] == ["sentinel-2-l2a"]  # merged with the first body
 
 
@@ -285,7 +288,7 @@ def test_select_evenly_spreads_over_time_and_keeps_all_when_small() -> None:
 def test_token_paths_per_collection() -> None:
     api = modis_api()
     token = pc.fetch_token(api, pc.SPECS["modis-13q1-061"])
-    assert token == "PLACEHOLDER-SAS-TOKEN"
+    assert token == "PLACEHOLDER-SAS-TOKEN"  # noqa: S105
     assert api.calls[0][1].endswith("/sas/v1/token/modiseuwest/modis-061-cogs")
     api = s2_api()
     pc.fetch_token(api, pc.SPECS["sentinel-2-l2a"])
@@ -322,7 +325,7 @@ def test_sentinel_series_layers_and_manifest(tmp_path: Path) -> None:
     assert clear["cloud_cover_item"] == pytest.approx(0.990514)
     assert clear["status"] == "ok"
     cloudy = table.loc[CLOUDY_ID]
-    assert pd.isna(cloudy["ndvi_mean"])  # all cloud: null, never 0 and never dropped
+    assert table["ndvi_mean"].isna()[CLOUDY_ID]  # all cloud: null, never 0 and never dropped
     assert cloudy["valid_fraction"] == 0.0
     assert cloudy["status"] == "too_few_valid_pixels"
 
@@ -386,7 +389,7 @@ def test_unreadable_scene_stays_in_the_table_with_a_status(tmp_path: Path) -> No
     table = pd.read_parquet(manifest_path.parent / manifest["file"]).set_index("item_id")
     assert len(table) == 2
     assert table.loc[CLEAR_ID, "status"] == "read_failed"
-    assert pd.isna(table.loc[CLEAR_ID, "ndvi_mean"])
+    assert table["ndvi_mean"].isna()[CLEAR_ID]
     assert any(CLEAR_ID in text and "403" in text for text in manifest["warnings"])
     assert not (manifest_path.parent / "layers" / f"{CLEAR_ID}.tif").exists()
 
@@ -433,7 +436,7 @@ def test_modis_series_uses_native_grid_and_composite_dates(tmp_path: Path) -> No
     assert table.loc[AQUA_ID, "platform"] == "MODIS Aqua"
     assert terra["ndvi_mean"] == pytest.approx(0.5)
     assert terra["valid_fraction"] == pytest.approx(11 / 16)
-    assert pd.isna(terra["cloud_cover_item"])
+    assert table["cloud_cover_item"].isna().all()
     assert manifest["scale_factors"]["250m_16_days_NDVI"]["scale"] == 0.0001
     assert manifest["scale_factors"]["250m_16_days_NDVI"]["fill_value"] == -3000
     assert "pixel reliability" in manifest["cloud_mask_rule"]
@@ -522,7 +525,12 @@ def test_read_window_crops_to_the_box_and_resamples_the_20m_layer_by_nearest(
     assert coarse.transform == reference.transform
     assert coarse.data.dtype == np.uint8
     assert set(np.unique(coarse.data)) <= set(range(11))  # nearest: no blended classes
-    assert (coarse.data[:, 0::2][:, :-1] == coarse.data[:, 1::2][:, : coarse.data[:, 1::2].shape[1]]).mean() > 0.4
+    # Each 10 m pixel takes the class of the 20 m cell that contains its centre.
+    rows, cols = np.indices(coarse.data.shape)
+    x = reference.transform.c + (cols + 0.5) * 10.0
+    y = reference.transform.f - (rows + 0.5) * 10.0
+    expected = classes[((top - y) // 20).astype(int), ((x - left) // 20).astype(int)]
+    assert (coarse.data == expected).all()
 
 
 # --- command line -------------------------------------------------------------------------
@@ -542,7 +550,7 @@ def test_command_line_runs_with_injected_http_and_reader(
     text = capsys.readouterr().out
     assert "2 scenes" in text
     assert "1 with NDVI" in text
-    assert (out / "ndvi_sentinel_2_l2a.manifest.json").is_file()
+    assert (out / "ndvi_sentinel2_l2a.manifest.json").is_file()
 
 
 def test_command_line_rejects_bad_input(capsys: pytest.CaptureFixture[str]) -> None:
@@ -554,6 +562,20 @@ def test_command_line_rejects_bad_input(capsys: pytest.CaptureFixture[str]) -> N
         main([*base, "--collection", "sentinel-2-l2a", "--start", "2025-02-01",
               "--end", "2025-01-31"])  # fmt: skip
     with pytest.raises(SystemExit):
-        main([*base[:2], "-90.52", "14.58", "-90.56", "14.62", *base[6:],
-              "--collection", "sentinel-2-l2a", "--start", "2025-01-01", "--end", "2025-01-31"])
+        main(
+            [
+                *base[:2],
+                "-90.52",
+                "14.58",
+                "-90.56",
+                "14.62",
+                *base[6:],
+                "--collection",
+                "sentinel-2-l2a",
+                "--start",
+                "2025-01-01",
+                "--end",
+                "2025-01-31",
+            ]
+        )
     assert "error" in capsys.readouterr().err.lower()
