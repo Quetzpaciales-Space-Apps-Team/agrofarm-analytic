@@ -19,6 +19,7 @@ RUN apt-get update && apt-get upgrade -y --no-install-recommends \
     && useradd --system --uid 10001 --no-create-home app
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
+COPY runtime-models/ /app/runtime-models/
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PORT=8080
 USER 10001
 EXPOSE 8080

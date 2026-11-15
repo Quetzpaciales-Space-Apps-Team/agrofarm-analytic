@@ -58,3 +58,12 @@ def test_rollback_runbook_is_documented() -> None:
     assert "gcloud run services update-traffic" in content
     assert "ml-service" in content
     assert "data-service" in content
+
+
+def test_cd_packages_a_checksum_pinned_leaf_artifact_before_building() -> None:
+    raw = CD_WORKFLOW_PATH.read_text()
+    assert raw.count("gh release download maize-leaf-0.1.1") == 2
+    assert raw.count("deploy/prepare_model.py") == 2
+    assert "LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1" in raw
+    dockerfile = (REPO_ROOT / "services/ml/Dockerfile").read_text()
+    assert "COPY runtime-models/ /app/runtime-models/" in dockerfile
