@@ -20,6 +20,7 @@ from agrofarm_data.connectors import (
     meteomatics,
     nasa_power,
     planetary_computer,
+    rio_contreras,
     soilgrids,
     worldcover,
 )
@@ -37,6 +38,21 @@ def build_parser() -> argparse.ArgumentParser:
     station = commands.add_parser("insivumeh", help="Clean the INSIVUMEH daily climate workbook")
     station.add_argument("--input", type=Path, required=True, help="Path to the .xlsx workbook")
     station.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
+
+    contreras = commands.add_parser(
+        "rio-contreras", help="Ingest one reviewed Rio Contreras rainfall source"
+    )
+    contreras.add_argument(
+        "--source",
+        choices=sorted(rio_contreras.SPECS),
+        required=True,
+        help="Reviewed source type; each source writes a separate clean dataset",
+    )
+    contreras.add_argument("--input", type=Path, required=True, help="Source .xlsx or .csv file")
+    contreras.add_argument("--out", type=Path, required=True, help="Directory for the clean table")
+    contreras.add_argument(
+        "--raw-dir", type=Path, required=True, help="Write-once raw storage directory"
+    )
 
     indices = commands.add_parser("enso", help="Clean the NOAA ONI and RONI text files")
     indices.add_argument("--oni", type=Path, required=True, help="Path to oni.ascii.txt")
@@ -240,6 +256,11 @@ def main(
         frame = insivumeh.read_insivumeh(args.input)
         manifest = insivumeh.write_clean(frame, args.out, source_file=args.input)
         sys.stdout.write(f"{len(frame)} rows -> {manifest}\n")
+    elif args.command == "rio-contreras":
+        rio_connector = rio_contreras.make_connector(args.source, args.input)
+        manifest = run_job(rio_connector, args.raw_dir, args.out)
+        rows = json.loads(manifest.read_text("utf-8"))["rows"]
+        sys.stdout.write(f"{rows} rows -> {manifest}\n")
     elif args.command == "enso":
         frame = enso.read_enso(args.oni, args.roni)
         manifest = enso.write_clean(frame, args.out, oni_file=args.oni, roni_file=args.roni)
