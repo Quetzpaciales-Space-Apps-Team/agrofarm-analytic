@@ -73,9 +73,14 @@ def test_scale_traits_stay_inside_zero_to_one() -> None:
 
 def test_aliases_resolve_to_the_crop_and_are_unique() -> None:
     table = load_traits()
-    assert table.resolve("Maize ").crop_id == "maize"
-    assert table.resolve("black beans").crop_id == "black_beans"
-    assert table.resolve("corn").crop_id == "maize"
+
+    def crop_id(name: str) -> str | None:
+        crop = table.resolve(name)
+        return crop.crop_id if crop else None
+
+    assert crop_id("Maize ") == "maize"
+    assert crop_id("black beans") == "black_beans"
+    assert crop_id("corn") == "maize"
     assert table.resolve("pumpkin") is None
     seen: list[str] = []
     for row in table.rows:

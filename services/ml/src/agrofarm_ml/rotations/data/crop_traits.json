@@ -1,0 +1,275 @@
+[
+  {
+    "crop_id": "maize",
+    "display_name": "Maize",
+    "aliases": [
+      "corn",
+      "maize_grain"
+    ],
+    "group": "cereal",
+    "values": {
+      "cycle_days": 140,
+      "kc_mid": 1.2,
+      "root_depth_m": 1.0,
+      "soil_cover": 0.5,
+      "water_demand": 0.7,
+      "nitrogen_fixing": 0.0,
+      "forage_value": 0.3,
+      "market_suitability": 0.8,
+      "income": 0.6,
+      "soil_structure": 0.3,
+      "erosion_reduction": 0.3
+    },
+    "sources": {
+      "cycle_days": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Typical grain maize cycle assumed by the AI assistant. Varieties and altitude change it a lot; needs local review."
+      },
+      "kc_mid": {
+        "source_id": "fao56_recalled",
+        "basis": "Mid-season Kc for grain maize recalled from FAO-56 Table 12 (1.20); not re-checked against the document."
+      },
+      "root_depth_m": {
+        "source_id": "fao56_recalled",
+        "basis": "Lower end of the 1.0 to 1.7 m maximum root depth range recalled from FAO-56 Table 22; not re-checked."
+      },
+      "soil_cover": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "water_demand": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "nitrogen_fixing": {
+        "source_id": "general_agronomy",
+        "basis": "Cereals do not fix atmospheric nitrogen."
+      },
+      "forage_value": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "market_suitability": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "income": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "soil_structure": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "erosion_reduction": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      }
+    }
+  },
+  {
+    "crop_id": "black_beans",
+    "display_name": "Black beans",
+    "aliases": [
+      "beans",
+      "common_bean",
+      "dry_bean"
+    ],
+    "group": "legume",
+    "values": {
+      "cycle_days": 90,
+      "kc_mid": 1.15,
+      "root_depth_m": 0.6,
+      "soil_cover": 0.6,
+      "water_demand": 0.5,
+      "nitrogen_fixing": 0.8,
+      "forage_value": 0.2,
+      "market_suitability": 0.7,
+      "income": 0.6,
+      "soil_structure": 0.4,
+      "erosion_reduction": 0.4
+    },
+    "sources": {
+      "cycle_days": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Typical black bean cycle assumed by the AI assistant; needs local review."
+      },
+      "kc_mid": {
+        "source_id": "fao56_recalled",
+        "basis": "Mid-season Kc for dry beans recalled from FAO-56 Table 12 (1.15); not re-checked against the document."
+      },
+      "root_depth_m": {
+        "source_id": "fao56_recalled",
+        "basis": "Lower end of the 0.6 to 0.9 m maximum root depth range recalled from FAO-56 Table 22; not re-checked."
+      },
+      "soil_cover": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "water_demand": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "nitrogen_fixing": {
+        "source_id": "general_agronomy",
+        "basis": "Legumes fix atmospheric nitrogen with rhizobia. The 0.8 level is a placeholder, not a measured fixation rate."
+      },
+      "forage_value": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "market_suitability": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "income": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "soil_structure": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "erosion_reduction": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      }
+    }
+  },
+  {
+    "crop_id": "cover_crop",
+    "display_name": "Cover crop",
+    "aliases": [
+      "cover",
+      "green_manure"
+    ],
+    "group": "cover",
+    "values": {
+      "cycle_days": null,
+      "kc_mid": null,
+      "root_depth_m": null,
+      "soil_cover": 0.9,
+      "water_demand": 0.3,
+      "nitrogen_fixing": 0.5,
+      "forage_value": 0.6,
+      "market_suitability": 0.1,
+      "income": 0.1,
+      "soil_structure": 0.8,
+      "erosion_reduction": 0.9
+    },
+    "sources": {
+      "cycle_days": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "No value: no cover crop species has been chosen for the pilot."
+      },
+      "kc_mid": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "No value: no cover crop species has been chosen for the pilot."
+      },
+      "root_depth_m": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "No value: no cover crop species has been chosen for the pilot."
+      },
+      "soil_cover": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "water_demand": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "nitrogen_fixing": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Assumes a mixture that contains a legume; the species is not chosen yet, so 0.5 is a placeholder."
+      },
+      "forage_value": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "market_suitability": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "income": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "soil_structure": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "erosion_reduction": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      }
+    }
+  },
+  {
+    "crop_id": "fallow",
+    "display_name": "Fallow",
+    "aliases": [
+      "bare_fallow",
+      "rest"
+    ],
+    "group": "fallow",
+    "values": {
+      "cycle_days": null,
+      "kc_mid": null,
+      "root_depth_m": null,
+      "soil_cover": 0.1,
+      "water_demand": 0.0,
+      "nitrogen_fixing": 0.0,
+      "forage_value": 0.1,
+      "market_suitability": 0.0,
+      "income": 0.0,
+      "soil_structure": 0.2,
+      "erosion_reduction": 0.1
+    },
+    "sources": {
+      "cycle_days": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "No value: fallow is a period, not a crop."
+      },
+      "kc_mid": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "No value: fallow is a period, not a crop."
+      },
+      "root_depth_m": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "No value: fallow is a period, not a crop."
+      },
+      "soil_cover": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Assumes mostly bare soil with sparse weeds; real cover depends on weed management."
+      },
+      "water_demand": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "No crop transpiration; evaporation from bare soil is ignored in this placeholder."
+      },
+      "nitrogen_fixing": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "forage_value": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "market_suitability": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "income": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "soil_structure": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      },
+      "erosion_reduction": {
+        "source_id": "assumption_ai_provisional",
+        "basis": "Placeholder score on a 0..1 scale chosen by the AI assistant to rank the pilot crops against each other; no measurement behind it."
+      }
+    }
+  }
+]
