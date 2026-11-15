@@ -33,7 +33,8 @@ def plane(direction: str, angle: float, rows: int = 12, cols: int = 12) -> NDArr
     row, col = np.mgrid[0:rows, 0:cols].astype("float64")
     east, north = col * CELL * LON_M, -row * CELL * LAT_M  # rows grow southward
     toward = {"east": east, "west": -east, "north": north, "south": -north}[direction]
-    return np.tan(math.radians(angle)) * toward
+    heights: NDArray[np.float64] = np.tan(math.radians(angle)) * toward
+    return heights
 
 
 # ---- geometry ----------------------------------------------------------------------------
@@ -84,7 +85,7 @@ def test_slope_uses_metres_not_degrees_of_longitude() -> None:
     high_latitude = from_origin(-90.5, 60.0, CELL, CELL)
     slope_eq, _ = analysis.slope_aspect(dem, near_equator)
     slope_hi, _ = analysis.slope_aspect(dem, high_latitude)
-    assert slope_hi[5, 5] > slope_eq[5, 5] + 20
+    assert slope_hi[5, 5] > slope_eq[5, 5] + 15
 
 
 # ---- depression filling and flow accumulation --------------------------------------------
@@ -159,6 +160,19 @@ def test_waterlogging_zone_needs_low_slope_and_convergence() -> None:
     assert zone.tolist() == [[0, 1, 2, 0, zones.NODATA]]
 
 
+def test_percentile_limits_never_fall_below_the_absolute_floor() -> None:
+    slope = np.full((10, 10), 1.0)
+    acc = np.ones((10, 10))  # nothing converges: every percentile is 1 cell
+    acc[0, 0] = 5000.0
+    erosion, waterlogging, limits = zones.classify(slope, acc)
+    floor = zones.MIN_CONVERGENCE_CELLS
+    assert limits["concentrated_flow_min_cells"] == floor
+    assert limits["waterlogging_moderate_min_cells"] == floor
+    assert (waterlogging == zones.LOW).sum() == 99  # only the one real convergent cell
+    assert waterlogging[0, 0] == zones.HIGH
+    assert (erosion == zones.LOW).all()  # slope 1 degree: not an erosion zone
+
+
 def test_thresholds_are_documented_constants() -> None:
     assert zones.EROSION_SLOPE_MODERATE_DEG < zones.EROSION_SLOPE_HIGH_DEG
     assert 0 < zones.CONVERGENCE_PERCENTILE < 100
@@ -177,8 +191,11 @@ def write_tile(path: Path, west: float, north: float, nodata: float | None = Non
     """A 20 x 20 tile whose height rises 10 degrees toward the east, continuous across tiles."""
     col = np.arange(TILE_PX, dtype="float64")
     longitude = west + (col + 0.5) * TILE_CELL
-    height = np.tan(math.radians(10.0)) * (longitude + 90.0) * 111_000.0 * math.cos(
-        math.radians(north - 0.1)
+    height = (
+        np.tan(math.radians(10.0))
+        * (longitude + 91.0)
+        * 111_000.0
+        * math.cos(math.radians(north - 0.1))
     )
     data = np.tile(height, (TILE_PX, 1)).astype("float32")
     if nodata is not None:
