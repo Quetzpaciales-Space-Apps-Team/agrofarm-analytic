@@ -1,0 +1,33 @@
+{
+  "synthetic": true,
+  "note": "Synthetic fixture with a built-in ENSO effect on rainfall. Skill on it says nothing about real data: the model card verdict on the real station data stays no_skill_over_climatology.",
+  "model_version": "rainfall-baseline-0.1.0",
+  "seed": 0,
+  "tolerance": 0.05,
+  "holdout_years": [
+    2003,
+    2005,
+    2007,
+    2008,
+    2009,
+    2010
+  ],
+  "metrics": {
+    "model": {
+      "pinball_p10": 6.205,
+      "pinball_p50": 7.024,
+      "pinball_p90": 5.582,
+      "pinball_mean": 6.27,
+      "mae_p50": 14.047,
+      "coverage_p10_p90": 0.694
+    },
+    "climatology": {
+      "pinball_p10": 6.819,
+      "pinball_p50": 16.716,
+      "pinball_p90": 6.187,
+      "pinball_mean": 9.907,
+      "mae_p50": 33.432,
+      "coverage_p10_p90": 0.792
+    }
+  }
+}

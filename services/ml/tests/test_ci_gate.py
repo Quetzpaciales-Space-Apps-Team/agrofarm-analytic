@@ -75,7 +75,10 @@ def test_the_baseline_can_be_regenerated_and_then_passes(tmp_path: Path) -> None
 
 
 def test_same_input_and_model_version_give_the_same_output(tmp_path: Path) -> None:
-    climate, enso = pd.read_csv(CLIMATE, parse_dates=["date"]), pd.read_csv(ENSO, parse_dates=["month"])
+    climate, enso = (
+        pd.read_csv(CLIMATE, parse_dates=["date"]),
+        pd.read_csv(ENSO, parse_dates=["month"]),
+    )
     climate.to_parquet(tmp_path / "c.parquet", index=False)
     enso.to_parquet(tmp_path / "e.parquet", index=False)
     cards, predictions = [], []
