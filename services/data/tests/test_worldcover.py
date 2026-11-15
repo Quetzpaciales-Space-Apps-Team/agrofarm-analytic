@@ -147,7 +147,7 @@ def test_box_crossing_two_tiles_is_mosaicked(tmp_path: Path) -> None:
     write_tile(tmp_path / "ESA_WorldCover_10m_2021_v200_N14W091_Map.tif", west, -91.0, 15.0)
     write_tile(tmp_path / "ESA_WorldCover_10m_2021_v200_N14W090_Map.tif", east, -90.5, 15.0)
     table = aggregate(tmp_path, (-90.6, 14.9, -90.4, 15.0))
-    assert len(table) == 4  # two cells per tile on the top row, two rows
+    assert len(table) == 8  # four columns (two per tile) and two rows
     assert cell(table, -90.575, 14.975)["fraction_cropland"] == 1.0
     assert cell(table, -90.525, 14.975)["fraction_cropland"] == 1.0
     assert cell(table, -90.475, 14.975)["fraction_cropland"] == pytest.approx(0.25)
@@ -254,7 +254,7 @@ def test_clean_output_has_table_geotiff_and_an_honest_manifest(tiles: Path, tmp_
     assert any("which crop" in text for text in manifest["limitations"])
     assert any("2021" in text for text in manifest["limitations"])
     assert any("built-up" in text.lower() for text in manifest["limitations"])
-    assert manifest["cropland_cells"] == int(table["cropland_mask"].sum()) == 3
+    assert manifest["cropland_cells"] == int(table["cropland_mask"].sum()) == 2
     assert len(manifest["checksum_sha256"]) == 64
     assert len(manifest["raster"]["checksum_sha256"]) == 64
 
@@ -290,4 +290,4 @@ def test_command_line_writes_the_clean_dataset(
     assert (out / "landcover_worldcover_cropland_mask.parquet").is_file()
     printed = capsys.readouterr().out
     assert "100 cells" in printed
-    assert "3 in the cropland mask" in printed
+    assert "2 in the cropland mask" in printed

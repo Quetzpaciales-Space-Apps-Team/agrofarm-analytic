@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from agrofarm_data import __version__
-from agrofarm_data.connectors import enso, insivumeh, nasa_power, soilgrids
+from agrofarm_data.connectors import enso, insivumeh, nasa_power, soilgrids, worldcover
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -46,6 +46,25 @@ def build_parser() -> argparse.ArgumentParser:
     soil.add_argument(
         "--area-name", required=True, help="Name of the area, written to the manifest"
     )
+
+    cover = commands.add_parser(
+        "worldcover", help="Cropland mask on the 0.05 degree grid from ESA WorldCover tiles"
+    )
+    cover.add_argument(
+        "--input", type=Path, required=True, help="Folder with ESA_WorldCover_*_Map.tif tiles"
+    )
+    cover.add_argument("--out", type=Path, required=True, help="Directory for the clean dataset")
+    cover.add_argument(
+        "--bbox",
+        type=float,
+        nargs=4,
+        required=True,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="Area in EPSG:4326",
+    )
+    cover.add_argument(
+        "--area-name", required=True, help="Name of the area, written to the manifest"
+    )
     return parser
 
 
@@ -67,4 +86,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         manifest = soilgrids.write_clean(args.input, args.out, tuple(args.bbox), args.area_name)
         rows = json.loads(manifest.read_text("utf-8"))["rows"]
         sys.stdout.write(f"{rows} rows -> {manifest}\n")
+    elif args.command == "worldcover":
+        manifest = worldcover.write_clean(args.input, args.out, tuple(args.bbox), args.area_name)
+        info = json.loads(manifest.read_text("utf-8"))
+        sys.stdout.write(
+            f"{info['rows']} cells, {info['cropland_cells']} in the cropland mask -> {manifest}\n"
+        )
     return 0
