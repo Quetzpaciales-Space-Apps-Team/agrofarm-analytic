@@ -12,6 +12,50 @@ tags:
   - name: simulation
   - name: rotations
 paths:
+  /v1/vegetation/simulate:
+    post:
+      tags: [simulation]
+      operationId: simulateRegionalVegetation
+      summary: Conditional regional greenness outlook from the accepted limited-use NDVI model
+      description: >-
+        Not parcel yield or an ENSO forecast. The original 5% improvement goal was not reached.
+        Nearest trained cropland cell must be within 15 km. Rainfall changes apply uniformly
+        to early and late seasons; phase maps to RONI +1, 0 or -1 in both periods.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [farm_id, centroid_lat, centroid_lon, scenario]
+              properties:
+                farm_id: {type: string, format: uuid}
+                centroid_lat: {type: number, minimum: -90, maximum: 90}
+                centroid_lon: {type: number, minimum: -180, maximum: 180}
+                scenario: {$ref: '#/components/schemas/Scenario'}
+      responses:
+        "200":
+          description: Ordered p10/p50/p90 anomalies, raw median SHAP differences, reference cell, validation and limitations
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [target, unit, baseline, scenario, attributions, validation, limitations, provenance]
+                properties:
+                  target: {const: seasonal_peak_ndvi_anomaly_pct}
+                  unit: {const: '%'}
+                  baseline: {type: object}
+                  scenario: {type: object}
+                  attributions: {type: array, items: {type: object}}
+                  validation: {type: object}
+                  limitations: {type: array, items: {type: string}}
+                  provenance: {type: object}
+        "400":
+          description: Malformed request body
+        "422":
+          description: Invalid scenario or no trained cropland cell within 15 km
+        "503":
+          description: Trained NDVI artifact is not configured
   /v1/leaves/assess:
     post:
       tags: [leaf-health]
