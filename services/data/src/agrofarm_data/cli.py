@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from agrofarm_data import __version__
-from agrofarm_data.connectors import enso, insivumeh, nasa_power, soilgrids
+from agrofarm_data.connectors import enso, insivumeh, nasa_power, soilgrids, worldcover
 from agrofarm_data.terrain import pipeline as terrain
 
 
@@ -48,6 +48,37 @@ def build_parser() -> argparse.ArgumentParser:
         "--area-name", required=True, help="Name of the area, written to the manifest"
     )
 
+    cover = commands.add_parser(
+        "worldcover", help="Cropland mask on the 0.05 degree grid from ESA WorldCover tiles"
+    )
+    cover.add_argument(
+        "--input", type=Path, required=True, help="Folder with ESA_WorldCover_*_Map.tif tiles"
+    )
+    cover.add_argument("--out", type=Path, required=True, help="Directory for the clean dataset")
+    cover.add_argument(
+        "--bbox",
+        type=float,
+        nargs=4,
+        required=True,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="Area in EPSG:4326",
+    )
+    cover.add_argument(
+        "--area-name", required=True, help="Name of the area, written to the manifest"
+    )
+
+    farm = commands.add_parser(
+        "worldcover-polygon", help="Land cover shares inside a farm polygon from 10 m pixels"
+    )
+    farm.add_argument(
+        "--input", type=Path, required=True, help="Folder with ESA_WorldCover_*_Map.tif tiles"
+    )
+    farm.add_argument("--polygon", type=Path, required=True, help="GeoJSON Polygon, EPSG:4326")
+    farm.add_argument("--out", type=Path, required=True, help="JSON file for the report")
+    farm.add_argument(
+        "--declared-cropland", action="store_true", help="The farm declares that it grows crops"
+    )
+
     relief = commands.add_parser(
         "terrain", help="Slope, aspect, flow accumulation and risk zones from Copernicus DEM tiles"
     )
@@ -85,6 +116,34 @@ def main(argv: Sequence[str] | None = None) -> int:
         manifest = soilgrids.write_clean(args.input, args.out, tuple(args.bbox), args.area_name)
         rows = json.loads(manifest.read_text("utf-8"))["rows"]
         sys.stdout.write(f"{rows} rows -> {manifest}\n")
+    elif args.command == "worldcover":
+        manifest = worldcover.write_clean(args.input, args.out, tuple(args.bbox), args.area_name)
+        info = json.loads(manifest.read_text("utf-8"))
+        sys.stdout.write(
+            f"{info['rows']} cells, {info['cropland_cells']} in the cropland mask -> {manifest}\n"
+        )
+        for text in info["warnings"]:
+            sys.stderr.write(f"WARNING: {text}\n")
+    elif args.command == "worldcover-polygon":
+        geometry = json.loads(args.polygon.read_text("utf-8"))
+        result = worldcover.polygon_cover(args.input, geometry)
+        message = worldcover.check_declared_cropland(result, args.declared_cropland)
+        report = {
+            "source": "ESA WorldCover 2021 v200 (10 m)",
+            "source_year": worldcover.SOURCE_YEAR,
+            "attribution": worldcover.ATTRIBUTION,
+            "fractions": result.fractions,
+            "valid_pixels": result.valid_pixels,
+            "valid_fraction": round(result.valid_fraction, 6),
+            "warnings": [message] if message else [],
+            "limitations": worldcover.LIMITATIONS,
+        }
+        args.out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        cropland = result.fractions["cropland"]
+        shown = "no data" if cropland is None else f"{cropland:.1%}"
+        sys.stdout.write(f"cropland {shown} of {result.valid_pixels} valid pixels -> {args.out}\n")
+        if message:
+            sys.stderr.write(f"WARNING: {message}\n")
     elif args.command == "terrain":
         manifest = terrain.write_clean(args.input, args.out, tuple(args.bbox), args.area_name)
         count = len(json.loads(manifest.read_text("utf-8"))["layers"])
