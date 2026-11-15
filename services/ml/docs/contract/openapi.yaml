@@ -341,9 +341,12 @@ components:
               type: object
               description: >
                 Optional farmer constraints. Understood keys: avoid_crops (array of crop names;
-                strategies that contain one are penalised and say so) and water_limited
-                (boolean; doubles the weight of the water_use priority). Other keys are
-                ignored and reported as a gap in every strategy.
+                strategies that contain one are penalised and say so); water_limited
+                (boolean; doubles the weight of the water_use priority); water_availability
+                (low, medium or high, as stored by core-api; low has the same effect as
+                water_limited, medium and high change nothing); equipment (array, as stored by
+                core-api; accepted, no rule uses it yet, and every strategy says so when it is
+                not empty). Other keys are ignored and reported as a gap in every strategy.
         scenario: { $ref: "#/components/schemas/Scenario" }
     Scores:
       type: object
