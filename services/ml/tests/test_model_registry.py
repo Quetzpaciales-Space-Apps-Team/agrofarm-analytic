@@ -124,7 +124,9 @@ def test_a_card_missing_a_required_field_is_refused_and_names_it(
 
 @pytest.mark.parametrize("field", ["limits", "features", "purpose", "held_out_metrics"])
 def test_an_empty_required_field_counts_as_missing(tmp_path: Path, field: str) -> None:
-    install(tmp_path, registry_card=card(**{field: [] if field in {"limits", "features"} else ""}))
+    empty = card()
+    empty[field] = [] if field in {"limits", "features"} else ""
+    install(tmp_path, registry_card=empty)
     with pytest.raises(RegistryError, match=field):
         registry.scan(tmp_path)
 
@@ -197,3 +199,21 @@ def test_nothing_is_required_unless_the_deploy_asks(monkeypatch: pytest.MonkeyPa
     monkeypatch.delenv("REQUIRE_MODELS", raising=False)
     monkeypatch.setenv("MODEL_REGISTRY_DIR", "/does/not/exist")
     assert create_app() is not None
+
+
+@pytest.mark.parametrize(
+    "value", ["toy/1.0.0;other/2.0.0", "toy/1.0.0,other/2.0.0", " toy/1.0.0 ; "]
+)
+def test_the_required_list_accepts_semicolons_because_gcloud_splits_on_commas(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    install(tmp_path)
+    install(
+        tmp_path, "other", "2.0.0", artifact=("model_card.json", {"model_version": "other-2.0.0"})
+    )
+    monkeypatch.setenv("REQUIRE_MODELS", value)
+    monkeypatch.setenv("MODEL_REGISTRY_DIR", str(tmp_path))
+    assert create_app() is not None
+    monkeypatch.setenv("REQUIRE_MODELS", "toy/1.0.0;absent/0.0.1")
+    with pytest.raises(RegistryError, match=r"absent/0\.0\.1"):
+        create_app()

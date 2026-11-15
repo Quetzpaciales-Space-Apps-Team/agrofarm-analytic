@@ -1,12 +1,13 @@
 """Application factory. Run with: uvicorn agrofarm_ml.main:create_app --factory"""
 
 import os
+import re
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 
-from agrofarm_ml import stub
+from agrofarm_ml import registry, stub
 from agrofarm_ml.contract import load_contract
 from agrofarm_ml.leaves.model import MAX_BYTES, LeafModel
 from agrofarm_ml.ndvi.outlook import NdviOutlook
@@ -20,6 +21,16 @@ def create_app(
     app = FastAPI(title="AgroFarm ml-service", version="0.1.0", docs_url=None, redoc_url=None)
     # The contract file is the source of truth: publish it instead of a generated schema.
     app.openapi = load_contract  # type: ignore[method-assign]
+    # A deploy that needs trained models names them; start-up fails if one is missing or wrong.
+    required = [
+        item.strip()
+        for item in re.split(r"[;,]", os.environ.get("REQUIRE_MODELS", ""))
+        if item.strip()
+    ]
+    if required:
+        registry.require(
+            Path(os.environ.get("MODEL_REGISTRY_DIR", "/app/runtime-models")), required
+        )
     leaf_directory = os.environ.get("LEAF_MODEL_DIR")
     if leaf_model is None and leaf_directory:
         leaf_model = LeafModel.load(Path(leaf_directory))

@@ -102,7 +102,7 @@ jobs:
             --project="${{ secrets.GCP_PROJECT_ID }}" \
             --region="${{ secrets.GCP_REGION }}" \
             --image="$IMAGE_URI" \
-            --update-env-vars="LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1,NDVI_MODEL_DIR=/app/runtime-models/ndvi-outlook/0.1.0" \
+            --update-env-vars="LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1,NDVI_MODEL_DIR=/app/runtime-models/ndvi-outlook/0.1.0,REQUIRE_MODELS=maize-leaf/0.1.1;ndvi-outlook/0.1.0" \
             --quiet
 
       - name: Check that ml-service is not public (staging)
@@ -217,7 +217,7 @@ jobs:
             --project="${{ secrets.GCP_PROJECT_ID }}" \
             --region="${{ secrets.GCP_REGION }}" \
             --image="$IMAGE_URI" \
-            --update-env-vars="LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1,NDVI_MODEL_DIR=/app/runtime-models/ndvi-outlook/0.1.0" \
+            --update-env-vars="LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1,NDVI_MODEL_DIR=/app/runtime-models/ndvi-outlook/0.1.0,REQUIRE_MODELS=maize-leaf/0.1.1;ndvi-outlook/0.1.0" \
             --quiet
 
       - name: Check that ml-service is not public (production)
