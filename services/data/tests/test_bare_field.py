@@ -1,5 +1,7 @@
 """DS-056: periods of low NDVI are bare-field candidates. A cloud gap is never bare soil."""
 
+from typing import Any
+
 import pandas as pd
 import pytest
 
@@ -13,7 +15,7 @@ NAN = float("nan")
 
 
 def series(
-    values: list[float], start: str = "2020-01-01", step_days: int = 16, **extra: object
+    values: list[float], start: str = "2020-01-01", step_days: int = 16, **extra: Any
 ) -> pd.DataFrame:
     dates = pd.date_range(start, periods=len(values), freq=f"{step_days}D")
     frame = pd.DataFrame({"date": dates, "ndvi_mean": values})
@@ -95,8 +97,8 @@ def test_bad_tables_are_rejected_not_guessed(bad: pd.DataFrame) -> None:
 
 
 def test_duplicate_dates_for_one_polygon_are_rejected() -> None:
-    frame = series([0.1, 0.1])
-    frame.loc[1, "date"] = frame.loc[0, "date"]
+    first = series([0.1, 0.1])
+    frame = pd.concat([first, first.iloc[[0]]], ignore_index=True)  # the first date, twice
     with pytest.raises(ValueError, match="duplicate"):
         detect_bare_periods(frame)
 
