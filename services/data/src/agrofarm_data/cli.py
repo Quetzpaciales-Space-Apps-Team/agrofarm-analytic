@@ -2,13 +2,17 @@
 
 import argparse
 import json
+import os
 import sys
 from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
 from agrofarm_data import __version__
+from agrofarm_data.chirps_job import DirectoryUploader, run_chirps_job
+from agrofarm_data.connector import run_job
 from agrofarm_data.connectors import (
+    chirps,
     enso,
     insivumeh,
     nasa_power,
@@ -16,6 +20,7 @@ from agrofarm_data.connectors import (
     soilgrids,
     worldcover,
 )
+from agrofarm_data.gcs_storage import GcsStorage
 from agrofarm_data.terrain import pipeline as terrain
 
 
@@ -136,6 +141,23 @@ def build_parser() -> argparse.ArgumentParser:
     ndvi.add_argument(
         "--raw-dir", type=Path, default=None, help="Raw store folder (default: <out>/raw)"
     )
+
+    rain = commands.add_parser(
+        "chirps", help="Read CHIRPS rainfall windows and write a monthly dataset"
+    )
+    rain.add_argument(
+        "--bbox", type=float, nargs=4, required=True,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"), help="Area in EPSG:4326",
+    )  # fmt: skip
+    rain.add_argument("--start", required=True, help="First day, YYYY-MM-DD")
+    rain.add_argument("--end", required=True, help="Last day, YYYY-MM-DD")
+    rain.add_argument("--out", type=Path, help="Local clean output directory")
+    rain.add_argument("--raw-dir", type=Path, help="Local immutable raw store")
+    rain.add_argument(
+        "--gcs", action="store_true", help="Run as a Cloud Run Job and upload to Cloud Storage"
+    )
+    rain.add_argument("--raw-bucket", help="Raw bucket (default: GCS_BUCKET_RAW)")
+    rain.add_argument("--clean-bucket", help="Clean bucket (default: GCS_BUCKET_CLEAN)")
     return parser
 
 
@@ -160,10 +182,14 @@ def main(
     *,
     http: planetary_computer.HttpJson = planetary_computer.http_json,
     reader: planetary_computer.RasterReader = planetary_computer.read_window,
+    chirps_window_reader: chirps.WindowReader | None = None,
+    gcs_storage: DirectoryUploader | None = None,
 ) -> int:
     """Run a command. `http` and `reader` let tests replace the network for planetary-ndvi."""
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.command == "chirps":
+        _check_chirps_args(parser, args)
     if args.command == "planetary-ndvi":
         _check_ndvi_args(parser, args)
     if args.command == "insivumeh":
@@ -228,4 +254,50 @@ def main(
         )
         for text in info["warnings"]:
             sys.stderr.write(f"WARNING: {text}\n")
+    elif args.command == "chirps":
+        start, end = date.fromisoformat(args.start), date.fromisoformat(args.end)
+        bbox = tuple(args.bbox)
+        if args.gcs:
+            raw_bucket = args.raw_bucket or os.environ.get("GCS_BUCKET_RAW")
+            clean_bucket = args.clean_bucket or os.environ.get("GCS_BUCKET_CLEAN")
+            if not raw_bucket or not clean_bucket:
+                parser.error("--gcs requires both bucket flags or GCS_BUCKET_RAW/GCS_BUCKET_CLEAN")
+            manifest_uri = run_chirps_job(
+                bbox=bbox,
+                start=start,
+                end=end,
+                raw_bucket=raw_bucket,
+                clean_bucket=clean_bucket,
+                window_reader=chirps_window_reader or chirps._read_remote_window,
+                uploader=gcs_storage or GcsStorage(),
+            )  # fmt: skip
+            sys.stdout.write(f"CHIRPS monthly dataset uploaded -> {manifest_uri}\n")
+        else:
+            if args.out is None:
+                parser.error("local chirps mode requires --out")
+            raw_dir = args.raw_dir or args.out / "raw"
+            connector = chirps.ChirpsConnector(
+                bbox,
+                start,
+                end,
+                raw_dir / chirps.DATASET / chirps.VERSION,
+                window_reader=chirps_window_reader or chirps._read_remote_window,
+            )
+            manifest = run_job(connector, raw_dir, args.out)
+            info = json.loads(manifest.read_text("utf-8"))
+            sys.stdout.write(f"{info['rows']} cells -> {manifest}\n")
     return 0
+
+
+def _check_chirps_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    try:
+        chirps._grid(tuple(args.bbox))
+        first, last = date.fromisoformat(args.start), date.fromisoformat(args.end)
+        if first > last or first < date(1981, 1, 1):
+            raise ValueError
+        if args.gcs and (first.year, first.month) != (last.year, last.month):
+            parser.error("Cloud Run CHIRPS executions must cover one calendar month")
+        if not args.gcs and args.out is None:
+            parser.error("local chirps mode requires --out")
+    except ValueError:
+        parser.error("CHIRPS requires a valid bbox and ordered YYYY-MM-DD dates")

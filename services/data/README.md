@@ -36,6 +36,37 @@ the STAC response go to `<out>/raw/` (write-once). Collection ids and assets: `s
 and `modis-13Q1-061` (`250m_16_days_NDVI`, `250m_16_days_pixel_reliability`). The cloud mask rules and the
 scale factors are in each manifest. Tests use recorded fixtures in `tests/fixtures/planetary_computer/`.
 
+## CHIRPS rainfall (DS-021)
+
+Run a local monthly ingestion with:
+
+```sh
+uv run python -m agrofarm_data chirps --bbox WEST SOUTH EAST NORTH \
+  --start YYYY-MM-DD --end YYYY-MM-DD --out <clean-dir> [--raw-dir <raw-dir>]
+```
+
+For a Cloud Run Job, pass `--gcs` and set `GCS_BUCKET_RAW` and `GCS_BUCKET_CLEAN` on the job, or
+provide `--raw-bucket` and `--clean-bucket`. The start and end dates must be within one calendar
+month. Example execution after creating a job from the data-service image:
+
+```sh
+gcloud run jobs execute data-service-staging --region <region> \
+  --args=chirps,--bbox,-90.60,14.40,-90.40,14.60,--start,2024-01-01,--end,2024-01-31,--gcs \
+  --update-env-vars=GCS_BUCKET_RAW=<raw-bucket>,GCS_BUCKET_CLEAN=<clean-bucket> --wait
+```
+
+The job reads the requested cells from CHIRPS v3 daily final RNL GeoTIFFs using HTTP byte ranges.
+It stores the clipped source windows immutably under
+`raw/climate_chirps_daily/v3.0-final-rnl/YYYY/MM/` and publishes the Parquet table, daily COGs and
+manifest under `clean/climate_chirps_daily/YYYY/MM/`. It does not persist the global source rasters.
+The CHIRPS GeoTIFFs are strip-organized, so HTTP range support avoids transferring unrelated
+longitude columns but transfer volume still grows with the number of source rows crossed by the
+requested area. The job uses the Cloud Run service account identity to upload; grant it object
+create and get permissions on the raw bucket (raw conflict verification), and object create
+permissions on the clean bucket; clean-bucket overwrite also needs object delete permission.
+No service-account key is required. Local tests use the recorded window fixture and do not call
+CHIRPS or Google Cloud.
+
 ## Add a connector
 
 1. Write tests first, with a small recorded or synthetic fixture. CI never calls external APIs.
