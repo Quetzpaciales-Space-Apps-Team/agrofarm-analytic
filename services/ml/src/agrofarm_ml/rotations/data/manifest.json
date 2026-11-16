@@ -1,0 +1,43 @@
+{
+  "name": "crop_traits",
+  "version": "0.1.0",
+  "status": "provisional",
+  "generated_by": "Claude Code (claude-sonnet-5-5), 2026-11-15",
+  "reviewed_by": null,
+  "pilot_crops": "maize, black_beans, cover_crop, with fallow as the bare-field option. Decided in agrofarm-docs ADR 0004; the trait VALUES below stay provisional.",
+  "review_note": "The project owner confirmed that a person with agronomy knowledge reviewed the crop traits. Reviewer identity, exact reviewed revision and corrections were not supplied. Source verification is not established by this confirmation; retain provisional source status until the review record is completed.",
+  "human_review_confirmation": {
+    "review_occurred": true,
+    "confirmed_by": "eldmark",
+    "confirmed_on": "2026-11-15",
+    "reviewer_role": "Person with agronomy knowledge, as confirmed by the project owner",
+    "reviewer_identity": null,
+    "reviewed_revision": null,
+    "corrections": null,
+    "scope": "Project crop-traits table. Does not establish review of rotation thresholds or photo-treatment guidance."
+  },
+  "values_verified_against_sources": false,
+  "scale": "Traits on a 0..1 scale: 0 is the lowest level of the trait, 1 the highest. water_demand is demand, so a higher value means MORE water needed.",
+  "sources": {
+    "assumption_ai_provisional": "Placeholder chosen by the AI assistant. No external source. Replace after agronomist review.",
+    "fao56_recalled": "FAO Irrigation and Drainage Paper 56 (Allen et al., 1998). Values recalled by the AI assistant and NOT re-checked against the document.",
+    "general_agronomy": "Textbook agronomy (legume nitrogen fixation, cereals do not fix nitrogen). Qualitative only."
+  },
+  "planned_sources": [
+    "FAO ECOCROP (not used yet)",
+    "Local sources from Guatemala (AGR-001)"
+  ],
+  "columns": {
+    "cycle_days": "Days from sowing to harvest, null when not defined",
+    "kc_mid": "Mid-season crop coefficient (FAO-56), null when not defined",
+    "root_depth_m": "Maximum root depth in metres, null when not defined",
+    "soil_cover": "0..1 share of the soil covered while the crop stands",
+    "water_demand": "0..1, higher means more water needed",
+    "nitrogen_fixing": "0..1, higher means more nitrogen fixed",
+    "forage_value": "0..1, higher means more useful as animal feed",
+    "market_suitability": "0..1, higher means easier to sell locally",
+    "income": "0..1, higher means more cash income per season",
+    "soil_structure": "0..1, higher means more benefit to soil structure and organic matter",
+    "erosion_reduction": "0..1, higher means more protection against erosion"
+  }
+}

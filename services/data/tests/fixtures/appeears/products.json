@@ -1,0 +1,66 @@
+[
+ {
+  "Available": true,
+  "DOI": "10.5067/MODIS/MOD13Q1.061",
+  "Deleted": false,
+  "Description": "Vegetation Indices (NDVI & EVI)",
+  "DocLink": "https://doi.org/10.5067/MODIS/MOD13Q1.061",
+  "Info": {
+   "collection_concept_id": "C1748066515-LPCLOUD",
+   "provider_id": "lp_prod"
+  },
+  "Platform": "Terra MODIS",
+  "Product": "MOD13Q1",
+  "ProductAndVersion": "MOD13Q1.061",
+  "RasterType": "Tile",
+  "Resolution": "250m",
+  "Source": "LP DAAC",
+  "TemporalExtentEnd": "Present",
+  "TemporalExtentStart": "2000-02-18",
+  "TemporalGranularity": "16 day",
+  "Version": "061"
+ },
+ {
+  "Available": true,
+  "DOI": "10.5067/T5RUATAQREF8",
+  "Deleted": false,
+  "Description": "Surface and Root Zone Soil Moisture",
+  "DocLink": "https://doi.org/10.5067/T5RUATAQREF8",
+  "Info": {
+   "cmr_date_parse": "datetime",
+   "collection_concept_id": "C3480440870-NSIDC_CPRD",
+   "provider_id": "nsidc_cumulus_prod"
+  },
+  "Platform": "SMAP",
+  "Product": "SPL4SMGP",
+  "ProductAndVersion": "SPL4SMGP.008",
+  "RasterType": "Tile",
+  "Resolution": "9000m",
+  "Source": "NSIDC DAAC",
+  "TemporalExtentEnd": "Present",
+  "TemporalExtentStart": "2015-03-31",
+  "TemporalGranularity": "Daily",
+  "Version": "008"
+ },
+ {
+  "Available": true,
+  "DOI": "10.5067/VIIRS/VNP13A1.002",
+  "Deleted": false,
+  "Description": "Vegetation Indices (NDVI & EVI)",
+  "DocLink": "https://doi.org/10.5067/VIIRS/VNP13A1.002",
+  "Info": {
+   "collection_concept_id": "C2519127224-LPCLOUD",
+   "provider_id": "lp_prod"
+  },
+  "Platform": "Suomi NPP VIIRS",
+  "Product": "VNP13A1",
+  "ProductAndVersion": "VNP13A1.002",
+  "RasterType": "Tile",
+  "Resolution": "500m",
+  "Source": "LP DAAC",
+  "TemporalExtentEnd": "Present",
+  "TemporalExtentStart": "2012-01-17",
+  "TemporalGranularity": "16 day",
+  "Version": "002"
+ }
+]

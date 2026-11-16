@@ -1,0 +1,67 @@
+[project]
+name = "agrofarm-ml"
+version = "0.1.0"
+description = "AgroFarm ml-service."
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "lightgbm>=4.7.0",
+    "pandas>=3.1.1",
+    "pillow>=13.0.0",
+    "pyarrow>=26.0.1",
+    "pyyaml>=6.0.3",
+    "uvicorn>=0.32",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pip-audit>=2.7",
+    "httpx>=0.28",
+    "pandas-stubs>=3.1.0.261029",
+    "schemathesis>=4.33.4",
+    "jsonschema>=4.26.0",
+    "openapi-spec-validator>=0.9.0",
+    "types-pyyaml>=6.0.12.20261113",
+    "types-jsonschema>=4.26.0.20261006",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agrofarm_ml"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"docs/contract/openapi.yaml" = "agrofarm_ml/openapi.yaml"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM", "T20"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+source = ["agrofarm_ml"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

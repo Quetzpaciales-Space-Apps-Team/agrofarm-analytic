@@ -1,0 +1,250 @@
+{
+  "generated_by": "OpenAI Codex (gpt-6.1-sol)",
+  "reviewed_by": null,
+  "scope": "Synthetic sensitivity and software consistency, not field calibration",
+  "input_sha256": {
+    "engine.py": "2204100407cdb694580ad945a31204bbdb6cc47c48dff28700e33ae17ce2fd89",
+    "rules.py": "e77369f66769771d44dc04d1e1fcbec957118f4c063dc983fd077d7e2fac8136",
+    "crop_traits.json": "07780e2dffc5ce672041f61109ba00b94e3fb9cf442652cc1121b2fab1d4f720",
+    "manifest.json": "e53f0323b484c61e99d95e50a1fc6f569468a36c481e0772c16ff46ff7857cb8"
+  },
+  "traits_version": "0.1.0",
+  "scenario_count": 45,
+  "profile_names": [
+    "equal",
+    "water_use",
+    "income",
+    "soil_structure",
+    "forage_value",
+    "nitrogen_fixing",
+    "erosion_reduction",
+    "market_suitability",
+    "water_limited",
+    "avoid_beans"
+  ],
+  "iterations": [
+    {
+      "multiplier": 1.0,
+      "constants": {
+        "LEGUME_AFTER_CEREAL_NITROGEN_BONUS": 0.25,
+        "LEGUME_AFTER_CEREAL_SOIL_BONUS": 0.05,
+        "BARE_FALLOW_EROSION_PENALTY": 0.15,
+        "DRY_WATER_FIT_SLOPE": 0.5,
+        "WET_EROSION_SLOPE": 0.2,
+        "WARMING_WATER_SLOPE": 0.03
+      },
+      "cases": 450,
+      "bounded": true,
+      "changed_winner_sets_vs_current": 0,
+      "winner_counts_including_ties": {
+        "current": 45,
+        "maize_beans": 90,
+        "maize_beans_cover_crop": 180,
+        "maize_cover_crop": 180
+      },
+      "top_two_ranges_overlap_cases": 449,
+      "equal_neutral_example": [
+        {
+          "id": "current",
+          "score": 0.275,
+          "range": {
+            "low": 0.175,
+            "high": 0.375
+          }
+        },
+        {
+          "id": "maize_beans",
+          "score": 0.486,
+          "range": {
+            "low": 0.386,
+            "high": 0.586
+          }
+        },
+        {
+          "id": "maize_cover_crop",
+          "score": 0.45,
+          "range": {
+            "low": 0.35,
+            "high": 0.55
+          }
+        },
+        {
+          "id": "maize_beans_cover_crop",
+          "score": 0.514,
+          "range": {
+            "low": 0.414,
+            "high": 0.614
+          }
+        }
+      ]
+    },
+    {
+      "multiplier": 0.0,
+      "constants": {
+        "LEGUME_AFTER_CEREAL_NITROGEN_BONUS": 0.0,
+        "LEGUME_AFTER_CEREAL_SOIL_BONUS": 0.0,
+        "BARE_FALLOW_EROSION_PENALTY": 0.0,
+        "DRY_WATER_FIT_SLOPE": 0.0,
+        "WET_EROSION_SLOPE": 0.0,
+        "WARMING_WATER_SLOPE": 0.0
+      },
+      "cases": 450,
+      "bounded": true,
+      "changed_winner_sets_vs_current": 45,
+      "winner_counts_including_ties": {
+        "current": 45,
+        "maize_beans": 90,
+        "maize_beans_cover_crop": 135,
+        "maize_cover_crop": 180
+      },
+      "top_two_ranges_overlap_cases": 449,
+      "equal_neutral_example": [
+        {
+          "id": "current",
+          "score": 0.286,
+          "range": {
+            "low": 0.186,
+            "high": 0.386
+          }
+        },
+        {
+          "id": "maize_beans",
+          "score": 0.443,
+          "range": {
+            "low": 0.343,
+            "high": 0.543
+          }
+        },
+        {
+          "id": "maize_cover_crop",
+          "score": 0.45,
+          "range": {
+            "low": 0.35,
+            "high": 0.55
+          }
+        },
+        {
+          "id": "maize_beans_cover_crop",
+          "score": 0.471,
+          "range": {
+            "low": 0.371,
+            "high": 0.571
+          }
+        }
+      ]
+    },
+    {
+      "multiplier": 0.5,
+      "constants": {
+        "LEGUME_AFTER_CEREAL_NITROGEN_BONUS": 0.125,
+        "LEGUME_AFTER_CEREAL_SOIL_BONUS": 0.025,
+        "BARE_FALLOW_EROSION_PENALTY": 0.075,
+        "DRY_WATER_FIT_SLOPE": 0.25,
+        "WET_EROSION_SLOPE": 0.1,
+        "WARMING_WATER_SLOPE": 0.015
+      },
+      "cases": 450,
+      "bounded": true,
+      "changed_winner_sets_vs_current": 45,
+      "winner_counts_including_ties": {
+        "current": 45,
+        "maize_beans": 90,
+        "maize_beans_cover_crop": 135,
+        "maize_cover_crop": 180
+      },
+      "top_two_ranges_overlap_cases": 449,
+      "equal_neutral_example": [
+        {
+          "id": "current",
+          "score": 0.28,
+          "range": {
+            "low": 0.18,
+            "high": 0.38
+          }
+        },
+        {
+          "id": "maize_beans",
+          "score": 0.464,
+          "range": {
+            "low": 0.364,
+            "high": 0.564
+          }
+        },
+        {
+          "id": "maize_cover_crop",
+          "score": 0.45,
+          "range": {
+            "low": 0.35,
+            "high": 0.55
+          }
+        },
+        {
+          "id": "maize_beans_cover_crop",
+          "score": 0.493,
+          "range": {
+            "low": 0.393,
+            "high": 0.593
+          }
+        }
+      ]
+    },
+    {
+      "multiplier": 1.5,
+      "constants": {
+        "LEGUME_AFTER_CEREAL_NITROGEN_BONUS": 0.375,
+        "LEGUME_AFTER_CEREAL_SOIL_BONUS": 0.07500000000000001,
+        "BARE_FALLOW_EROSION_PENALTY": 0.22499999999999998,
+        "DRY_WATER_FIT_SLOPE": 0.75,
+        "WET_EROSION_SLOPE": 0.30000000000000004,
+        "WARMING_WATER_SLOPE": 0.045
+      },
+      "cases": 450,
+      "bounded": true,
+      "changed_winner_sets_vs_current": 45,
+      "winner_counts_including_ties": {
+        "current": 45,
+        "maize_beans": 90,
+        "maize_beans_cover_crop": 180,
+        "maize_cover_crop": 135
+      },
+      "top_two_ranges_overlap_cases": 449,
+      "equal_neutral_example": [
+        {
+          "id": "current",
+          "score": 0.27,
+          "range": {
+            "low": 0.17,
+            "high": 0.37
+          }
+        },
+        {
+          "id": "maize_beans",
+          "score": 0.507,
+          "range": {
+            "low": 0.407,
+            "high": 0.607
+          }
+        },
+        {
+          "id": "maize_cover_crop",
+          "score": 0.45,
+          "range": {
+            "low": 0.35,
+            "high": 0.55
+          }
+        },
+        {
+          "id": "maize_beans_cover_crop",
+          "score": 0.536,
+          "range": {
+            "low": 0.436,
+            "high": 0.636
+          }
+        }
+      ]
+    }
+  ],
+  "selected_multiplier": 1.0,
+  "selection_reason": "Retain current provisional constants: no field target supports optimizing their magnitude. Boundedness and stability cannot establish agronomic accuracy.",
+  "fixed_assumptions": "Crop traits, ENSO offsets, avoidance penalty, water multiplier and interval constants are held fixed; this experiment does not validate them."
+}

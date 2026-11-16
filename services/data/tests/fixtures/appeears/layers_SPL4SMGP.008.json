@@ -1,0 +1,68 @@
+{
+ "Geophysical_Data_sm_rootzone": {
+  "AddOffset": "",
+  "Available": true,
+  "DataType": "float32",
+  "Description": "Root zone soil moisture (0-100 cm)",
+  "Dimensions": [
+   "time",
+   "y",
+   "x"
+  ],
+  "FillValue": -9999.0,
+  "FillValueAll": [
+   -9999.0
+  ],
+  "Group": "",
+  "Info": {
+   "group_name": "Geophysical_Data",
+   "layer_name": "sm_rootzone"
+  },
+  "IsQA": false,
+  "Layer": "Geophysical_Data_sm_rootzone",
+  "OrigDataType": "float32",
+  "OrigValidMax": 0.8999999762,
+  "OrigValidMin": 0.0,
+  "QualityLayers": "",
+  "QualityProductAndVersion": "",
+  "ScaleFactor": "",
+  "Units": "m^3/m^3",
+  "ValidMax": 0.8999999762,
+  "ValidMin": 0.0,
+  "XSize": 3856,
+  "YSize": 1624
+ },
+ "Geophysical_Data_sm_surface": {
+  "AddOffset": "",
+  "Available": true,
+  "DataType": "float32",
+  "Description": "Top layer soil moisture (0-5 cm)",
+  "Dimensions": [
+   "time",
+   "y",
+   "x"
+  ],
+  "FillValue": -9999.0,
+  "FillValueAll": [
+   -9999.0
+  ],
+  "Group": "",
+  "Info": {
+   "group_name": "Geophysical_Data",
+   "layer_name": "sm_surface"
+  },
+  "IsQA": false,
+  "Layer": "Geophysical_Data_sm_surface",
+  "OrigDataType": "float32",
+  "OrigValidMax": 0.8999999762,
+  "OrigValidMin": 0.0,
+  "QualityLayers": "",
+  "QualityProductAndVersion": "",
+  "ScaleFactor": "",
+  "Units": "m^3/m^3",
+  "ValidMax": 0.8999999762,
+  "ValidMin": 0.0,
+  "XSize": 3856,
+  "YSize": 1624
+ }
+}

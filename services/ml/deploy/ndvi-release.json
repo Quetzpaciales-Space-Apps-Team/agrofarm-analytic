@@ -1,0 +1,7 @@
+{
+  "tag": "ndvi-outlook-0.1.0",
+  "asset": "ndvi-outlook-model-0.1.0.tar.gz",
+  "archive_sha256": "a2256e4d56da3442b27cdd55b46f2aab9d465b5cfb730d29ebcf9cfec3b39cf2",
+  "model_version": "ndvi-vegetation-outlook-0.1.0",
+  "directory": "ndvi-outlook/0.1.0"
+}

@@ -1,0 +1,27 @@
+# Local development. core-api is not part of this repo: point CORE_API_URL at a stub
+# or at the core-api compose when a task needs it.
+services:
+  ml:
+    build: services/ml
+    ports:
+      - "127.0.0.1:${ML_PORT:-8081}:8080"
+    environment:
+      PORT: "8080"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CORE_API_URL: ${CORE_API_URL:-http://core-api:8080}
+      GCS_BUCKET_CLEAN: ${GCS_BUCKET_CLEAN:-agrofarm-clean-local}
+      GCS_BUCKET_MODELS: ${GCS_BUCKET_MODELS:-agrofarm-models-local}
+    volumes:
+      - ./data/clean:/data/clean:ro
+
+  data:
+    build: services/data
+    # Jobs run on demand: docker compose run --rm data <command>
+    profiles: ["jobs"]
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CORE_API_URL: ${CORE_API_URL:-http://core-api:8080}
+      GCS_BUCKET_RAW: ${GCS_BUCKET_RAW:-agrofarm-raw-local}
+      GCS_BUCKET_CLEAN: ${GCS_BUCKET_CLEAN:-agrofarm-clean-local}
+    volumes:
+      - ./data:/data

@@ -1,0 +1,36 @@
+{
+  "name": "maize-leaf",
+  "version": "0.1.1",
+  "model_version": "maize-leaf-lightgbm-0.1.1",
+  "status": "candidate_not_field_validated",
+  "purpose": "Screen one maize leaf photo for five candidate conditions. It supports inspection and is not a diagnosis.",
+  "label": "maize_leaf_condition: common_rust, corn_leaf_blight, gray_leaf_spot, healthy, insect_damage (image labels of the public dataset below, not labels from Guatemalan fields)",
+  "training_data_versions": {
+    "mendeley": "10.17632/hmkd6nbngr.1",
+    "archive_sha256": "21fa8dcfdac97e093d37b8cd5c94f94b2a226c4dd48e4cc7142d6f708a9d05a9"
+  },
+  "features": [
+    "feature_version rgb-hsv-texture-2"
+  ],
+  "held_out_metrics": {
+    "split": "Deterministic 70/15/15 by unions of original filename and perceptual image hash; augmentation suffixes stripped before splitting",
+    "test_groups": 744,
+    "rows": 1888,
+    "accuracy": 0.9523305084745762,
+    "balanced_accuracy": 0.9583723919555613,
+    "macro_f1": 0.9542884337058064,
+    "min_recall_by_class": 0.9131944444444444,
+    "note": "Internal metrics of the dataset. Not an external validation in Guatemala; scores are not calibrated probabilities."
+  },
+  "limits": [
+    "Candidate image classification, not a confirmed diagnosis or a measure of crop growth.",
+    "Only the five listed classes are supported; other plants and disorders may be misclassified.",
+    "A healthy label does not rule out disease or pests elsewhere on the plant or field.",
+    "Generic insect damage does not identify the insect species or prove fall armyworm.",
+    "No external field validation in Guatemala; background and lighting can affect the result.",
+    "Treatment choice requires local diagnosis, crop stage and a reviewed management guide."
+  ],
+  "license": "Dataset declared CC BY 4.0; preserve third-party provenance caveats",
+  "reviewed_by": null,
+  "artifact_card": "model_card.json"
+}

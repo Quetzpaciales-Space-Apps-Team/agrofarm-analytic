@@ -1,0 +1,393 @@
+{
+ "type": "FeatureCollection",
+ "links": [],
+ "features": [
+  {
+   "id": "S2B_MSIL2A_20250118T162519_R040_T15PYS_20250118T201048",
+   "bbox": [
+    -91.1455816,
+    14.3669746,
+    -90.1149035,
+    15.3693481
+   ],
+   "type": "Feature",
+   "links": [
+    {
+     "rel": "collection",
+     "type": "application/json",
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a"
+    },
+    {
+     "rel": "self",
+     "type": "application/geo+json",
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20250118T162519_R040_T15PYS_20250118T201048"
+    }
+   ],
+   "assets": {
+    "B04": {
+     "href": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/15/P/YS/2025/01/18/S2B_MSIL2A_20250118T162519_N0511_R040_T15PYS_20250118T201048.SAFE/GRANULE/L2A_T15PYS_A041107_20250118T163238/IMG_DATA/R10m/T15PYS_20250118T162519_B04_10m.tif",
+     "proj:bbox": [
+      699960.0,
+      1590240.0,
+      809760.0,
+      1700040.0
+     ],
+     "proj:shape": [
+      10980,
+      10980
+     ],
+     "proj:transform": [
+      10.0,
+      0.0,
+      699960.0,
+      0.0,
+      -10.0,
+      1700040.0
+     ],
+     "gsd": 10,
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "Band 4 - Red - 10m",
+     "eo:bands": [
+      {
+       "name": "B04",
+       "common_name": "red",
+       "description": "Band 4 - Red",
+       "center_wavelength": 0.665,
+       "full_width_half_max": 0.038
+      }
+     ]
+    },
+    "B08": {
+     "href": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/15/P/YS/2025/01/18/S2B_MSIL2A_20250118T162519_N0511_R040_T15PYS_20250118T201048.SAFE/GRANULE/L2A_T15PYS_A041107_20250118T163238/IMG_DATA/R10m/T15PYS_20250118T162519_B08_10m.tif",
+     "proj:bbox": [
+      699960.0,
+      1590240.0,
+      809760.0,
+      1700040.0
+     ],
+     "proj:shape": [
+      10980,
+      10980
+     ],
+     "proj:transform": [
+      10.0,
+      0.0,
+      699960.0,
+      0.0,
+      -10.0,
+      1700040.0
+     ],
+     "gsd": 10,
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "Band 8 - NIR - 10m",
+     "eo:bands": [
+      {
+       "name": "B08",
+       "common_name": "nir",
+       "description": "Band 8 - NIR",
+       "center_wavelength": 0.842,
+       "full_width_half_max": 0.145
+      }
+     ]
+    },
+    "SCL": {
+     "href": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/15/P/YS/2025/01/18/S2B_MSIL2A_20250118T162519_N0511_R040_T15PYS_20250118T201048.SAFE/GRANULE/L2A_T15PYS_A041107_20250118T163238/IMG_DATA/R20m/T15PYS_20250118T162519_SCL_20m.tif",
+     "proj:bbox": [
+      699960.0,
+      1590240.0,
+      809760.0,
+      1700040.0
+     ],
+     "proj:shape": [
+      5490,
+      5490
+     ],
+     "proj:transform": [
+      20.0,
+      0.0,
+      699960.0,
+      0.0,
+      -20.0,
+      1700040.0
+     ],
+     "gsd": 20,
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "Scene classfication map (SCL)"
+    }
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -91.1370836,
+       15.3693481
+      ],
+      [
+       -90.1149035,
+       15.3584533
+      ],
+      [
+       -90.1280515,
+       14.3669746
+      ],
+      [
+       -91.1455816,
+       14.3771358
+      ],
+      [
+       -91.1370836,
+       15.3693481
+      ]
+     ]
+    ]
+   },
+   "collection": "sentinel-2-l2a",
+   "properties": {
+    "datetime": "2025-01-18T16:25:19.024000Z",
+    "platform": "Sentinel-2B",
+    "proj:epsg": 32615,
+    "instruments": [
+     "msi"
+    ],
+    "s2:mgrs_tile": "15PYS",
+    "constellation": "Sentinel 2",
+    "s2:granule_id": "S2B_OPER_MSI_L2A_TL_2BPS_20250118T201048_A041107_T15PYS_N05.11",
+    "eo:cloud_cover": 0.990514,
+    "s2:datatake_id": "GS2B_20250118T162519_041107_N05.11",
+    "s2:product_uri": "S2B_MSIL2A_20250118T162519_N0511_R040_T15PYS_20250118T201048.SAFE",
+    "s2:datastrip_id": "S2B_OPER_MSI_L2A_DS_2BPS_20250118T201048_S20250118T163238_N05.11",
+    "s2:product_type": "S2MSI2A",
+    "sat:orbit_state": "descending",
+    "s2:datatake_type": "INS-NOBS",
+    "s2:generation_time": "2025-01-18T20:10:48.000000Z",
+    "sat:relative_orbit": 40,
+    "s2:water_percentage": 0.41185,
+    "s2:mean_solar_zenith": 42.0911242277486,
+    "s2:mean_solar_azimuth": 146.276325918899,
+    "s2:processing_baseline": "05.11",
+    "s2:snow_ice_percentage": 0.0,
+    "s2:vegetation_percentage": 83.529174,
+    "s2:thin_cirrus_percentage": 0.958016,
+    "s2:cloud_shadow_percentage": 0.03208,
+    "s2:nodata_pixel_percentage": 0.0,
+    "s2:unclassified_percentage": 0.193364,
+    "s2:not_vegetated_percentage": 13.914558,
+    "s2:degraded_msi_data_percentage": 0.021,
+    "s2:high_proba_clouds_percentage": 0.000126,
+    "s2:reflectance_conversion_factor": 1.03362404035033,
+    "s2:medium_proba_clouds_percentage": 0.032372,
+    "s2:saturated_defective_pixel_percentage": 0.0
+   },
+   "stac_extensions": [
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/projection/v1.0.0/schema.json"
+   ],
+   "stac_version": "1.0.0"
+  },
+  {
+   "id": "S2A_MSIL2A_20250113T162631_R040_T15PYS_20250113T191949",
+   "bbox": [
+    -91.1455816,
+    14.3669746,
+    -90.1149035,
+    15.3693481
+   ],
+   "type": "Feature",
+   "links": [
+    {
+     "rel": "collection",
+     "type": "application/json",
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a"
+    },
+    {
+     "rel": "self",
+     "type": "application/geo+json",
+     "href": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20250113T162631_R040_T15PYS_20250113T191949"
+    }
+   ],
+   "assets": {
+    "B04": {
+     "href": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/15/P/YS/2025/01/13/S2A_MSIL2A_20250113T162631_N0511_R040_T15PYS_20250113T191949.SAFE/GRANULE/L2A_T15PYS_A049944_20250113T163728/IMG_DATA/R10m/T15PYS_20250113T162631_B04_10m.tif",
+     "proj:bbox": [
+      699960.0,
+      1590240.0,
+      809760.0,
+      1700040.0
+     ],
+     "proj:shape": [
+      10980,
+      10980
+     ],
+     "proj:transform": [
+      10.0,
+      0.0,
+      699960.0,
+      0.0,
+      -10.0,
+      1700040.0
+     ],
+     "gsd": 10,
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "Band 4 - Red - 10m",
+     "eo:bands": [
+      {
+       "name": "B04",
+       "common_name": "red",
+       "description": "Band 4 - Red",
+       "center_wavelength": 0.665,
+       "full_width_half_max": 0.038
+      }
+     ]
+    },
+    "B08": {
+     "href": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/15/P/YS/2025/01/13/S2A_MSIL2A_20250113T162631_N0511_R040_T15PYS_20250113T191949.SAFE/GRANULE/L2A_T15PYS_A049944_20250113T163728/IMG_DATA/R10m/T15PYS_20250113T162631_B08_10m.tif",
+     "proj:bbox": [
+      699960.0,
+      1590240.0,
+      809760.0,
+      1700040.0
+     ],
+     "proj:shape": [
+      10980,
+      10980
+     ],
+     "proj:transform": [
+      10.0,
+      0.0,
+      699960.0,
+      0.0,
+      -10.0,
+      1700040.0
+     ],
+     "gsd": 10,
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "Band 8 - NIR - 10m",
+     "eo:bands": [
+      {
+       "name": "B08",
+       "common_name": "nir",
+       "description": "Band 8 - NIR",
+       "center_wavelength": 0.842,
+       "full_width_half_max": 0.145
+      }
+     ]
+    },
+    "SCL": {
+     "href": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/15/P/YS/2025/01/13/S2A_MSIL2A_20250113T162631_N0511_R040_T15PYS_20250113T191949.SAFE/GRANULE/L2A_T15PYS_A049944_20250113T163728/IMG_DATA/R20m/T15PYS_20250113T162631_SCL_20m.tif",
+     "proj:bbox": [
+      699960.0,
+      1590240.0,
+      809760.0,
+      1700040.0
+     ],
+     "proj:shape": [
+      5490,
+      5490
+     ],
+     "proj:transform": [
+      20.0,
+      0.0,
+      699960.0,
+      0.0,
+      -20.0,
+      1700040.0
+     ],
+     "gsd": 20,
+     "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+     "roles": [
+      "data"
+     ],
+     "title": "Scene classfication map (SCL)"
+    }
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -91.1370836,
+       15.3693481
+      ],
+      [
+       -90.1149035,
+       15.3584533
+      ],
+      [
+       -90.1280515,
+       14.3669746
+      ],
+      [
+       -91.1455816,
+       14.3771358
+      ],
+      [
+       -91.1370836,
+       15.3693481
+      ]
+     ]
+    ]
+   },
+   "collection": "sentinel-2-l2a",
+   "properties": {
+    "datetime": "2025-01-13T16:26:31.024000Z",
+    "platform": "Sentinel-2A",
+    "proj:epsg": 32615,
+    "instruments": [
+     "msi"
+    ],
+    "s2:mgrs_tile": "15PYS",
+    "constellation": "Sentinel 2",
+    "s2:granule_id": "S2A_OPER_MSI_L2A_TL_2APS_20250113T191949_A049944_T15PYS_N05.11",
+    "eo:cloud_cover": 0.346017,
+    "s2:datatake_id": "GS2A_20250113T162631_049944_N05.11",
+    "s2:product_uri": "S2A_MSIL2A_20250113T162631_N0511_R040_T15PYS_20250113T191949.SAFE",
+    "s2:datastrip_id": "S2A_OPER_MSI_L2A_DS_2APS_20250113T191949_S20250113T163728_N05.11",
+    "s2:product_type": "S2MSI2A",
+    "sat:orbit_state": "descending",
+    "s2:datatake_type": "INS-NOBS",
+    "s2:generation_time": "2025-01-13T19:19:49.000000Z",
+    "sat:relative_orbit": 40,
+    "s2:water_percentage": 0.408768,
+    "s2:mean_solar_zenith": 42.664551481327,
+    "s2:mean_solar_azimuth": 147.554417911228,
+    "s2:processing_baseline": "05.11",
+    "s2:snow_ice_percentage": 0.0,
+    "s2:vegetation_percentage": 85.402781,
+    "s2:thin_cirrus_percentage": 0.0,
+    "s2:cloud_shadow_percentage": 0.121503,
+    "s2:nodata_pixel_percentage": 0.0,
+    "s2:unclassified_percentage": 0.167478,
+    "s2:not_vegetated_percentage": 12.515503,
+    "s2:degraded_msi_data_percentage": 0.0001,
+    "s2:high_proba_clouds_percentage": 0.154907,
+    "s2:reflectance_conversion_factor": 1.0340940293659,
+    "s2:medium_proba_clouds_percentage": 0.191111,
+    "s2:saturated_defective_pixel_percentage": 0.0
+   },
+   "stac_extensions": [
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/projection/v1.0.0/schema.json"
+   ],
+   "stac_version": "1.0.0"
+  }
+ ],
+ "numberReturned": 2
+}

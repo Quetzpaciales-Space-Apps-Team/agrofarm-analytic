@@ -1,0 +1,95 @@
+{
+ "500_m_16_days_EVI": {
+  "AddOffset": 0.0,
+  "Available": true,
+  "DataType": "float32",
+  "Description": "500 m 16 days EVI",
+  "Dimensions": [
+   "time",
+   "YDim",
+   "XDim"
+  ],
+  "FillValue": -15000,
+  "FillValueAll": [
+   -15000,
+   -13000
+  ],
+  "Group": "",
+  "Info": {},
+  "IsQA": false,
+  "Layer": "500_m_16_days_EVI",
+  "OrigDataType": "int16",
+  "OrigValidMax": 10000,
+  "OrigValidMin": -10000,
+  "QualityLayers": "['500_m_16_days_VI_Quality']",
+  "QualityProductAndVersion": "VNP13A1.002",
+  "ScaleFactor": 0.0001,
+  "Units": "EVI",
+  "ValidMax": 1.0,
+  "ValidMin": -1.0,
+  "XSize": 2400,
+  "YSize": 2400
+ },
+ "500_m_16_days_NDVI": {
+  "AddOffset": 0.0,
+  "Available": true,
+  "DataType": "float32",
+  "Description": "500 m 16 days NDVI",
+  "Dimensions": [
+   "time",
+   "YDim",
+   "XDim"
+  ],
+  "FillValue": -15000,
+  "FillValueAll": [
+   -15000,
+   -13000
+  ],
+  "Group": "",
+  "Info": {},
+  "IsQA": false,
+  "Layer": "500_m_16_days_NDVI",
+  "OrigDataType": "int16",
+  "OrigValidMax": 10000,
+  "OrigValidMin": -10000,
+  "QualityLayers": "['500_m_16_days_VI_Quality']",
+  "QualityProductAndVersion": "VNP13A1.002",
+  "ScaleFactor": 0.0001,
+  "Units": "NDVI",
+  "ValidMax": 1.0,
+  "ValidMin": -1.0,
+  "XSize": 2400,
+  "YSize": 2400
+ },
+ "500_m_16_days_pixel_reliability": {
+  "AddOffset": "",
+  "Available": true,
+  "DataType": "int8",
+  "Description": "500 m 16 days pixel reliability",
+  "Dimensions": [
+   "time",
+   "YDim",
+   "XDim"
+  ],
+  "FillValue": -4,
+  "FillValueAll": [
+   -4,
+   -1
+  ],
+  "Group": "",
+  "Info": {},
+  "IsQA": true,
+  "Layer": "500_m_16_days_pixel_reliability",
+  "OrigDataType": "int8",
+  "OrigValidMax": 11,
+  "OrigValidMin": 0,
+  "QualityLayers": "",
+  "QualityProductAndVersion": "",
+  "ScaleFactor": "",
+  "Units": "Rank",
+  "ValidMax": 11.0,
+  "ValidMin": 0.0,
+  "XSize": 2400,
+  "YSize": 2400
+ }
+}

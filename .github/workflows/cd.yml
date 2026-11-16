@@ -1,0 +1,275 @@
+name: cd
+
+"on":
+  push:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    name: Detect changed services
+    runs-on: ubuntu-24.04
+    outputs:
+      ml: ${{ steps.filter.outputs.ml }}
+      data: ${{ steps.filter.outputs.data }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: filter
+        run: |
+          ml=true
+          data=true
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            files="$(git diff --name-only HEAD~1 HEAD)"
+            echo "$files"
+            if ! echo "$files" | grep -qvE '^services/(ml|data)/'; then
+              echo "$files" | grep -q '^services/ml/' || ml=false
+              echo "$files" | grep -q '^services/data/' || data=false
+            fi
+          fi
+          echo "ml=$ml" >> "$GITHUB_OUTPUT"
+          echo "data=$data" >> "$GITHUB_OUTPUT"
+
+  deploy-ml-staging:
+    name: Deploy ml-service (staging)
+    needs: changes
+    if: github.ref == 'refs/heads/develop' && needs.changes.outputs.ml == 'true'
+    runs-on: ubuntu-24.04
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_CI_DEPLOYER }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ secrets.GCP_REGION }}-docker.pkg.dev" --quiet
+
+      - name: Prepare verified regional NDVI release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ndvi-model"
+          gh release download ndvi-outlook-0.1.0 --repo "$GITHUB_REPOSITORY" \
+            --pattern ndvi-outlook-model-0.1.0.tar.gz --dir "$RUNNER_TEMP/ndvi-model"
+          python3 services/ml/deploy/prepare_ndvi.py \
+            --archive "$RUNNER_TEMP/ndvi-model/ndvi-outlook-model-0.1.0.tar.gz" \
+            --out services/ml/runtime-models
+
+      - name: Prepare verified maize-leaf model release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/maize-model"
+          gh release download maize-leaf-0.1.1 --repo "$GITHUB_REPOSITORY" \
+            --pattern maize-leaf-model-0.1.1.tar.gz --dir "$RUNNER_TEMP/maize-model"
+          python3 services/ml/deploy/prepare_model.py \
+            --archive "$RUNNER_TEMP/maize-model/maize-leaf-model-0.1.1.tar.gz" \
+            --out services/ml/runtime-models
+
+      - name: Build and push ml-service image
+        env:
+          IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/ml-service:${{ github.sha }}
+        run: |
+          docker build -t "$IMAGE_URI" services/ml
+          docker push "$IMAGE_URI"
+
+      # `gcloud run services update` only changes the revision and has no access flag.
+      # Who may invoke ml-service is an IAM policy on the service: this step never grants
+      # public access, and the next step fails the deploy if the service is public.
+      - name: Deploy ml-service to Cloud Run staging (authenticated only)
+        env:
+          IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/ml-service:${{ github.sha }}
+        run: |
+          gcloud run services update ml-service-staging \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --image="$IMAGE_URI" \
+            --update-env-vars="LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1,NDVI_MODEL_DIR=/app/runtime-models/ndvi-outlook/0.1.0,REQUIRE_MODELS=maize-leaf/0.1.1;ndvi-outlook/0.1.0" \
+            --quiet
+
+      - name: Check that ml-service is not public (staging)
+        run: |
+          POLICY="$(gcloud run services get-iam-policy ml-service-staging \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --format=json)" || {
+            echo "::warning::Could not read the IAM policy (the deploy identity may lack run.services.getIamPolicy). Public access was not checked."
+            exit 0
+          }
+          if echo "$POLICY" | grep -q "allUsers"; then
+            echo "::error::ml-service-staging is invokable without authentication."
+            exit 1
+          fi
+
+  deploy-data-staging:
+    name: Deploy data-service job (staging)
+    needs: changes
+    if: github.ref == 'refs/heads/develop' && needs.changes.outputs.data == 'true'
+    runs-on: ubuntu-24.04
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_CI_DEPLOYER }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ secrets.GCP_REGION }}-docker.pkg.dev" --quiet
+
+      - name: Build and push data-service image
+        env:
+          IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/data-service:${{ github.sha }}
+        run: |
+          docker build -t "$IMAGE_URI" services/data
+          docker push "$IMAGE_URI"
+
+      - name: Update data-service Cloud Run job in staging
+        env:
+          IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/data-service:${{ github.sha }}
+        run: |
+          gcloud run jobs update data-service-staging \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --image="$IMAGE_URI" \
+            --quiet
+
+  deploy-ml-production:
+    name: Deploy ml-service (production)
+    needs: changes
+    if: github.ref == 'refs/heads/main' && needs.changes.outputs.ml == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_CI_DEPLOYER }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ secrets.GCP_REGION }}-docker.pkg.dev" --quiet
+
+      - name: Prepare verified regional NDVI release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ndvi-model"
+          gh release download ndvi-outlook-0.1.0 --repo "$GITHUB_REPOSITORY" \
+            --pattern ndvi-outlook-model-0.1.0.tar.gz --dir "$RUNNER_TEMP/ndvi-model"
+          python3 services/ml/deploy/prepare_ndvi.py \
+            --archive "$RUNNER_TEMP/ndvi-model/ndvi-outlook-model-0.1.0.tar.gz" \
+            --out services/ml/runtime-models
+
+      - name: Prepare verified maize-leaf model release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/maize-model"
+          gh release download maize-leaf-0.1.1 --repo "$GITHUB_REPOSITORY" \
+            --pattern maize-leaf-model-0.1.1.tar.gz --dir "$RUNNER_TEMP/maize-model"
+          python3 services/ml/deploy/prepare_model.py \
+            --archive "$RUNNER_TEMP/maize-model/maize-leaf-model-0.1.1.tar.gz" \
+            --out services/ml/runtime-models
+
+      - name: Ensure ml-service commit SHA image exists in Artifact Registry
+        env:
+          IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/ml-service:${{ github.sha }}
+        run: |
+          if ! gcloud artifacts docker images describe "$IMAGE_URI" --quiet >/dev/null 2>&1; then
+            docker build -t "$IMAGE_URI" services/ml
+            docker push "$IMAGE_URI"
+          fi
+
+      - name: Deploy ml-service to Cloud Run production (authenticated only)
+        env:
+          IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/ml-service:${{ github.sha }}
+        run: |
+          gcloud run services update ml-service-prod \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --image="$IMAGE_URI" \
+            --update-env-vars="LEAF_MODEL_DIR=/app/runtime-models/maize-leaf/0.1.1,NDVI_MODEL_DIR=/app/runtime-models/ndvi-outlook/0.1.0,REQUIRE_MODELS=maize-leaf/0.1.1;ndvi-outlook/0.1.0" \
+            --quiet
+
+      - name: Check that ml-service is not public (production)
+        run: |
+          POLICY="$(gcloud run services get-iam-policy ml-service-prod \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --format=json)" || {
+            echo "::warning::Could not read the IAM policy (the deploy identity may lack run.services.getIamPolicy). Public access was not checked."
+            exit 0
+          }
+          if echo "$POLICY" | grep -q "allUsers"; then
+            echo "::error::ml-service-prod is invokable without authentication."
+            exit 1
+          fi
+
+  deploy-data-production:
+    name: Deploy data-service job (production)
+    needs: changes
+    if: github.ref == 'refs/heads/main' && needs.changes.outputs.data == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_CI_DEPLOYER }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ secrets.GCP_REGION }}-docker.pkg.dev" --quiet
+
+      - name: Ensure data-service commit SHA image exists in Artifact Registry
+        env:
+          IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/data-service:${{ github.sha }}
+        run: |
+          if ! gcloud artifacts docker images describe "$IMAGE_URI" --quiet >/dev/null 2>&1; then
+            docker build -t "$IMAGE_URI" services/data
+            docker push "$IMAGE_URI"
+          fi
+
+      - name: Update data-service Cloud Run job in production
+        env:
+          IMAGE_URI: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/data-service:${{ github.sha }}
+        run: |
+          gcloud run jobs update data-service-prod \
+            --project="${{ secrets.GCP_PROJECT_ID }}" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --image="$IMAGE_URI" \
+            --quiet

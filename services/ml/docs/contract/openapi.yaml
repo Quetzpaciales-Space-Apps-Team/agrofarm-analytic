@@ -1,0 +1,402 @@
+openapi: 3.1.0
+info:
+  title: AgroFarm ml-service
+  version: 0.1.0
+  description: >
+    Internal service called by core-api. This version is a deterministic stub: the numbers
+    come from fixed rules, not from a trained model, and `provenance.model_name` says so.
+    Outputs are decision support and are never certain: every answer carries a range.
+tags:
+  - name: health
+  - name: models
+  - name: simulation
+  - name: rotations
+paths:
+  /v1/vegetation/simulate:
+    post:
+      tags: [simulation]
+      operationId: simulateRegionalVegetation
+      summary: Conditional regional greenness outlook from the accepted limited-use NDVI model
+      description: >-
+        Not parcel yield or an ENSO forecast. The original 5% improvement goal was not reached.
+        Nearest trained cropland cell must be within 15 km. Rainfall changes apply uniformly
+        to early and late seasons; phase maps to RONI +1, 0 or -1 in both periods.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [farm_id, centroid_lat, centroid_lon, scenario]
+              properties:
+                farm_id: {type: string, format: uuid}
+                centroid_lat: {type: number, minimum: -90, maximum: 90}
+                centroid_lon: {type: number, minimum: -180, maximum: 180}
+                scenario: {$ref: '#/components/schemas/Scenario'}
+      responses:
+        "200":
+          description: Ordered p10/p50/p90 anomalies, raw median SHAP differences, reference cell, validation and limitations
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [target, unit, baseline, scenario, attributions, validation, limitations, provenance]
+                properties:
+                  target: {const: seasonal_peak_ndvi_anomaly_pct}
+                  unit: {const: '%'}
+                  baseline: {type: object}
+                  scenario: {type: object}
+                  attributions: {type: array, items: {type: object}}
+                  validation: {type: object}
+                  limitations: {type: array, items: {type: string}}
+                  provenance: {type: object}
+        "400":
+          description: Malformed request body
+        "422":
+          description: Invalid scenario or no trained cropland cell within 15 km
+        "503":
+          description: Trained NDVI artifact is not configured
+  /v1/leaves/assess:
+    post:
+      tags: [leaf-health]
+      operationId: assessMaizeLeaf
+      summary: Screen a maize leaf photo for supported disease classes
+      description: >-
+        Upload JPEG or PNG image bytes (maximum 5 MiB and 16 million pixels).
+        A candidate classification is decision support, not a confirmed diagnosis.
+        Model scores are not calibrated probabilities. Generic insect damage does
+        not identify an insect species. Guidance requires local agronomy review.
+        Returns 503 until a trained artifact is configured with LEAF_MODEL_DIR.
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema: {type: string, format: binary}
+          image/png:
+            schema: {type: string, format: binary}
+      responses:
+        "200":
+          description: Candidate classes, uncertainty, review requirements and provenance
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [assessment, candidate, scores, score_interpretation, needs_local_review, guidance, limits, provenance]
+                properties:
+                  assessment: {enum: [possible_condition, uncertain]}
+                  candidate: {type: [string, "null"]}
+                  scores:
+                    type: object
+                    additionalProperties: {type: number, minimum: 0, maximum: 1}
+                  score_interpretation: {type: string}
+                  needs_local_review: {const: true}
+                  guidance: {type: object}
+                  limits: {type: array, items: {type: string}}
+                  provenance: {type: object}
+        "400":
+          description: Invalid, corrupt or unsupported image
+        "413":
+          description: Image exceeds the byte or decoded pixel limit
+        "415":
+          description: Only image/jpeg and image/png are accepted
+        "503":
+          description: No trained leaf classifier is configured
+  /healthz:
+    get:
+      tags: [health]
+      operationId: healthz
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Alive
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Status" }
+              example: { status: ok }
+  /readyz:
+    get:
+      tags: [health]
+      operationId: readyz
+      summary: Readiness probe
+      responses:
+        "200":
+          description: Ready to answer requests
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Status" }
+              example: { status: ready }
+  /v1/models:
+    get:
+      tags: [models]
+      operationId: listModels
+      summary: Models this service answers with
+      responses:
+        "200":
+          description: One entry per model
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ModelList" }
+              example:
+                items:
+                  - name: agrofarm-stub
+                    version: stub-0.1.0
+                    target: yield_anomaly_pct
+                    unit: "%"
+                    status: stub
+                    notes: Fixed rules, not a trained model. Do not read the numbers as predictions.
+                  - name: agrofarm-rotation-rule-engine
+                    version: rules-0.1.0
+                    target: rotation_score
+                    unit: score_0_to_1
+                    status: rule_engine
+                    notes: Rule engine over a provisional crop traits table. Not a trained model. Needs review by a local agronomist.
+                    data_versions: { crop_traits: 0.1.0-provisional }
+  /v1/simulate:
+    post:
+      tags: [simulation]
+      operationId: simulate
+      summary: Simulate the crop response under a climate and ENSO scenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SimulateRequest" }
+            example:
+              farm_id: 6f1c2f0a-9a0e-4d53-8a55-0d6d7a1b2c33
+              centroid_lat: 14.59
+              centroid_lon: -90.53
+              crop: maize
+              scenario: { rainfall_change_pct: -20, temperature_change_c: 1.0, enso_phase: el_nino }
+      responses:
+        "200":
+          description: Baseline and scenario with quantile ranges, attributions and provenance
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SimulateResponse" }
+              example:
+                crop: maize
+                target: yield_anomaly_pct
+                unit: "%"
+                baseline: { p10: -12.0, p50: 0.0, p90: 11.0 }
+                scenario: { p10: -27.5, p50: -15.5, p90: -4.5 }
+                attributions:
+                  - { feature: rainfall_change_pct, contribution: -9.0 }
+                  - { feature: enso_phase, contribution: -4.0 }
+                  - { feature: temperature_change_c, contribution: -2.5 }
+                out_of_range_inputs: []
+                provenance:
+                  model_name: agrofarm-stub
+                  model_version: stub-0.1.0
+                  data_versions: {}
+                  generated_at: "2026-11-14T15:20:00Z"
+        "400":
+          description: The body could not be parsed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParseError" }
+        "422":
+          description: The request does not match the schema
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValidationError" }
+  /v1/rotations/score:
+    post:
+      tags: [rotations]
+      operationId: scoreRotations
+      summary: Score and explain at least three rotation strategies, including the current one
+      description: >
+        Rule engine over a versioned crop traits table with provisional source status. The owner
+        confirmed an agronomy review; reviewer identity and exact revision are not recorded.
+        It is not a trained model. Every strategy needs local review. The scenario
+        moves scores through named rules; each moved score is explained in `why`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RotationScoreRequest" }
+            example:
+              farm_id: 6f1c2f0a-9a0e-4d53-8a55-0d6d7a1b2c33
+              centroid_lat: 14.59
+              centroid_lon: -90.53
+              current_rotation: [maize, fallow]
+              priorities: { weights: { erosion_reduction: 0.9 }, constraints: {} }
+              scenario: { rainfall_change_pct: 0, temperature_change_c: 0, enso_phase: neutral }
+      responses:
+        "200":
+          description: Strategies with scores, reasons, evidence, gaps and risks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RotationScoreResponse" }
+        "400":
+          description: The body could not be parsed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParseError" }
+        "422":
+          description: The request does not match the schema
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValidationError" }
+components:
+  schemas:
+    Status:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string }
+    ModelList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [name, version, target, unit, status, notes]
+            properties:
+              name: { type: string }
+              version: { type: string }
+              target: { type: string }
+              unit: { type: string }
+              status: { type: string, enum: [stub, rule_engine, trained] }
+              notes: { type: string }
+              data_versions: { type: object, additionalProperties: { type: string } }
+    ParseError:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+    ValidationError:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: array, items: { type: object } }
+    Scenario:
+      type: object
+      required: [rainfall_change_pct, temperature_change_c, enso_phase]
+      properties:
+        rainfall_change_pct: { type: number, minimum: -80, maximum: 100 }
+        temperature_change_c: { type: number, minimum: -5, maximum: 8 }
+        enso_phase: { type: string, enum: [el_nino, la_nina, neutral] }
+    SimulateRequest:
+      type: object
+      required: [farm_id, centroid_lat, centroid_lon, crop, scenario]
+      properties:
+        farm_id: { type: string, format: uuid }
+        centroid_lat: { type: number, minimum: -90, maximum: 90 }
+        centroid_lon: { type: number, minimum: -180, maximum: 180 }
+        crop: { type: string, minLength: 1, maxLength: 60 }
+        scenario: { $ref: "#/components/schemas/Scenario" }
+    QuantileRange:
+      type: object
+      description: Always p10 <= p50 <= p90
+      required: [p10, p50, p90]
+      properties:
+        p10: { type: number }
+        p50: { type: number }
+        p90: { type: number }
+    Provenance:
+      type: object
+      required: [model_name, model_version, data_versions, generated_at]
+      properties:
+        model_name: { type: string }
+        model_version: { type: string }
+        data_versions: { type: object, additionalProperties: { type: string } }
+        generated_at: { type: string, format: date-time }
+    SimulateResponse:
+      type: object
+      required: [crop, target, unit, baseline, scenario, attributions, out_of_range_inputs, provenance]
+      properties:
+        crop: { type: string }
+        target: { type: string }
+        unit: { type: string }
+        baseline: { $ref: "#/components/schemas/QuantileRange" }
+        scenario: { $ref: "#/components/schemas/QuantileRange" }
+        attributions:
+          type: array
+          items:
+            type: object
+            required: [feature, contribution]
+            properties:
+              feature: { type: string }
+              contribution: { type: number }
+        out_of_range_inputs:
+          type: array
+          items: { type: string }
+        provenance: { $ref: "#/components/schemas/Provenance" }
+    RotationScoreRequest:
+      type: object
+      required: [farm_id, centroid_lat, centroid_lon, current_rotation, priorities, scenario]
+      properties:
+        farm_id: { type: string, format: uuid }
+        centroid_lat: { type: number, minimum: -90, maximum: 90 }
+        centroid_lon: { type: number, minimum: -180, maximum: 180 }
+        current_rotation: { type: array, maxItems: 12, items: { type: string, minLength: 1, maxLength: 60 } }
+        priorities:
+          type: object
+          required: [weights, constraints]
+          properties:
+            weights: { type: object, additionalProperties: { type: number, minimum: 0, maximum: 1 } }
+            constraints:
+              type: object
+              description: >
+                Optional farmer constraints. Understood keys: avoid_crops (array of crop names;
+                strategies that contain one are penalised and say so); water_limited
+                (boolean; doubles the weight of the water_use priority); water_availability
+                (low, medium or high, as stored by core-api; low has the same effect as
+                water_limited, medium and high change nothing); equipment (array, as stored by
+                core-api; accepted, no rule uses it yet, and every strategy says so when it is
+                not empty). Other keys are ignored and reported as a gap in every strategy.
+        scenario: { $ref: "#/components/schemas/Scenario" }
+    Scores:
+      type: object
+      required: [water_use, income, soil_structure, forage_value, nitrogen_fixing, erosion_reduction, market_suitability]
+      additionalProperties: { type: number, minimum: 0, maximum: 1 }
+    Strategy:
+      type: object
+      required: [id, name, is_current, sequence, overall_score, scores, uncertainty, why, evidence, benefits, gaps, risks, needs_local_review]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        is_current: { type: boolean }
+        sequence: { type: array, minItems: 1, items: { type: string } }
+        overall_score: { type: number, minimum: 0, maximum: 1 }
+        scores: { $ref: "#/components/schemas/Scores" }
+        uncertainty:
+          type: object
+          required: [low, high]
+          properties:
+            low: { type: number, minimum: 0, maximum: 1 }
+            high: { type: number, minimum: 0, maximum: 1 }
+        why: { type: array, minItems: 1, items: { type: string } }
+        evidence:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [statement, source]
+            properties:
+              statement: { type: string }
+              source: { type: string }
+        benefits: { type: array, minItems: 1, items: { type: string } }
+        gaps: { type: array, minItems: 1, items: { type: string } }
+        risks:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [description, needs_local_review]
+            properties:
+              description: { type: string }
+              needs_local_review: { type: boolean }
+        needs_local_review: { type: boolean }
+    RotationScoreResponse:
+      type: object
+      required: [disclaimer, strategies, provenance]
+      properties:
+        disclaimer: { type: string }
+        strategies:
+          type: array
+          minItems: 3
+          items: { $ref: "#/components/schemas/Strategy" }
+        provenance: { $ref: "#/components/schemas/Provenance" }

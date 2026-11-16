@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agrofarm.example/schemas/manifest.schema.json",
+  "title": "AgroFarm data-service output manifest",
+  "description": "One manifest per dataset written to clean/. Extra, connector-specific fields are allowed.",
+  "type": "object",
+  "required": ["dataset", "source", "license", "spatial_resolution", "checksum_sha256", "processing_version"],
+  "properties": {
+    "dataset": {"$ref": "#/$defs/text"},
+    "file": {"$ref": "#/$defs/text"},
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["file", "checksum_sha256"],
+        "properties": {"file": {"$ref": "#/$defs/text"}, "checksum_sha256": {"$ref": "#/$defs/sha256"}}
+      }
+    },
+    "source": {"$ref": "#/$defs/text"},
+    "source_version": {"$ref": "#/$defs/text"},
+    "retrieved_at": {"type": "string", "format": "date"},
+    "license": {"$ref": "#/$defs/text"},
+    "attribution": {"$ref": "#/$defs/text"},
+    "date_range": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": {"type": "string", "format": "date"},
+        "end": {"type": "string", "format": "date"}
+      }
+    },
+    "time_step": {"$ref": "#/$defs/text"},
+    "spatial_resolution": {"$ref": "#/$defs/text"},
+    "checksum_sha256": {"$ref": "#/$defs/sha256"},
+    "source_checksum_sha256": {
+      "description": "One sha256 for a single raw file, or a map of raw file name to sha256.",
+      "if": {"type": "string"},
+      "then": {"$ref": "#/$defs/sha256"},
+      "else": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/sha256"}}
+    },
+    "no_raw_input": {"const": true},
+    "processing_version": {"$ref": "#/$defs/text"}
+  },
+  "allOf": [
+    {
+      "anyOf": [{"required": ["file"]}, {"required": ["artifacts"]}]
+    },
+    {
+      "anyOf": [{"required": ["source_version"]}, {"required": ["retrieved_at"]}]
+    },
+    {
+      "anyOf": [
+        {"required": ["date_range"]},
+        {"required": ["time_step"], "properties": {"time_step": {"pattern": "^static"}}}
+      ]
+    },
+    {
+      "anyOf": [{"required": ["source_checksum_sha256"]}, {"required": ["no_raw_input"]}]
+    },
+    {
+      "if": {"properties": {"license": {"pattern": "^CC[ -]BY"}}, "required": ["license"]},
+      "then": {"required": ["attribution"]}
+    }
+  ],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
