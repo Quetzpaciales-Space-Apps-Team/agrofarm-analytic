@@ -16,6 +16,7 @@ AI coding assistants were used as tools to write and review code, tests, CI work
 | Claude Code | `claude-sonnet-5-5` | `eldmark` | Rotation engine constraint fix (ML-040), bare-field detection (DS-056), model registry (ML-050), AppEEARS connector (DS-030), reconciling the rotation PRs, issue triage |
 | Codex | `gpt-6` | `jdivass` | Connector code, recorded-fixture tests, documentation, review |
 | OpenAI Codex | `GPT-6` | `eldmark` | Maize-leaf dataset audit, CPU classifier, grouped evaluation, private image API, deployment checks and documentation; recording owner-confirmed crop-traits review while preserving source-verification limits |
+| Antigravity | `Gemini 3.8` | `Angel Chavez (angcoder-c)` | Repository synchronization, AppEEARS/Earthdata credentials and ML verification |
 
 Team members who used another tool add a row here in their next pull request (rule G11.3).
 
